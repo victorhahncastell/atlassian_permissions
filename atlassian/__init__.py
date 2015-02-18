@@ -76,25 +76,8 @@ class PermissionEntry:
 
     def __init__(self, permission, type, member_names):
         self.permission = permission
-        self._type = None
         self.type = type
         self.member_names = member_names
-
-    @property
-    def type(self):
-        if self._type == self.USER:
-            return 'user'
-        elif self._type == self.GROUP:
-            return 'group'
-        else:
-            raise ValueError('"{}" is an illegal value for type'.format(self._type))
-
-    @type.setter
-    def type(self, val):
-        if val in ('user',):
-            self._type = 1
-        elif val in ('group',):
-            self._type = 2
 
 
 class PermissionCollector:
