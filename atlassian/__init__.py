@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+import logging
 
 __author__ = 'Sýlvan Heuser'
 
@@ -14,6 +15,7 @@ class Service(metaclass=ABCMeta):
         :param url: URL of service
         :param version: tuple of version information
         """
+        self.l = logging.getLogger('{}.{}'.format(__name__, self.__class__.__name__))
         self.url = url
         self.version = version if version is not None else (0, 1, 0)
         self.user = None
