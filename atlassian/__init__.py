@@ -1,6 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 import logging
+from urllib.parse import urlsplit, urljoin
+
+from requests import get
+
 
 __author__ = 'Sýlvan Heuser'
 
@@ -95,3 +99,21 @@ class PermissionCollector:
                 permissions[s.name][p.key] = s.get_permissions(p.key)
             s.logout()
         return permissions
+
+
+class HTTPClient:
+    def __init__(self, base, user=None, password=None):
+        self.base = base
+        self.user = user
+        self.password = password
+
+    def get(self, url):
+        url = urlsplit(url)
+        url = url[2:]
+        request_url = urljoin(self.base, url)
+        if self.user is not None:
+            response = get(request_url, auth=(self.user, self.password))
+        else:
+            response = get(request_url)
+        assert response.status_code is 200, 'Error when requesting {}.'.format(request_url)
+        return response.json()

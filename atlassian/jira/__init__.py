@@ -1,32 +1,13 @@
 from collections import defaultdict
 import logging
-from urllib.parse import urljoin, urlsplit
 
-from requests import get
+from .. import HTTPClient
 
 from atlassian import Service, PermissionEntry, Project
 
 
 __author__ = 'Sýlvan Heuser'
 l = logging.getLogger(__name__)
-
-
-class HTTPClient:
-    def __init__(self, base, user=None, password=None):
-        self.base = base
-        self.user = user
-        self.password = password
-
-    def get(self, url):
-        url = urlsplit(url)
-        url = url[2:]
-        request_url = urljoin(self.base, url)
-        if self.user is not None:
-            response = get(request_url, auth=(self.user, self.password))
-        else:
-            response = get(request_url)
-        assert response.status_code is 200, 'Error when requesting {}.'.format(request_url)
-        return response.json()
 
 
 class Jira(Service):
