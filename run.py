@@ -30,13 +30,14 @@ def get_password(passwordarg, filearg):
 def get_services(confluence, jira, stash):
     services = []
     for arguments, service in ((confluence, Confluence), (jira, Jira), (stash, Stash)):
-        for uri in arguments:
-            version = None
-            if ',version=' in uri:
-                versionstr = uri.split(',')[-1]
-                version = tuple(versionstr.split('=')[-1].split('.'))
-                uri = ','.join(uri.split(',')[:-1])
-            services.append(service(uri, version=version))
+        if arguments is not None:
+            for uri in arguments:
+                version = None
+                if ',version=' in uri:
+                    versionstr = uri.split(',')[-1]
+                    version = tuple(versionstr.split('=')[-1].split('.'))
+                    uri = ','.join(uri.split(',')[:-1])
+                services.append(service(uri, version=version))
     assert services, 'No services specified'
     return services
 
