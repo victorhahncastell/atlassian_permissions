@@ -65,6 +65,7 @@ def main():
     parser.add_argument('--jira', '-j', help='Add JIRA instance', action='append')
     parser.add_argument('--stash', '-s', help='Add Stash instance', action='append')
     parser.add_argument('--save', '-S', help='Save to file')
+    parser.add_argument('--load', '-l', help='Load from file')
     parser.add_argument('--export', '-e', help='Export CSV data to this file')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
@@ -72,11 +73,15 @@ def main():
         raise ValueError('Invalid log level: {}'.format(args.loglevel))
     logging.basicConfig(level=loglevel)
 
-    password = get_password(args.password, args.passfile)
-    services = get_services(args.confluence, args.jira, args.stash)
+    if args.load:
+        with open(args.load, 'rb') as fd:
+            permissions = pickle.load(fd)
+    else:
+        password = get_password(args.password, args.passfile)
+        services = get_services(args.confluence, args.jira, args.stash)
 
-    pc = PermissionCollector(services, args.user, password)
-    permissions = pc.get_permissions()
+        pc = PermissionCollector(services, args.user, password)
+        permissions = pc.get_permissions()
     if args.export:
         n = Numberer(start=2)
         with open(args.export, 'w', newline='') as fd:
