@@ -58,7 +58,7 @@ class Confluence:
         d = self.driver
         d.get(self.uri + '/spaces/spacepermissions.action?key={}'.format(key))
         permissions = defaultdict(lambda: defaultdict(lambda: defaultdict()))
-        newpermissions = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: list())))
+        newpermissions = defaultdict(lambda: defaultdict(lambda: list()))
         for elem in d.find_elements_by_css_selector('td.permissionCell'):
             perm = elem.get_attribute('data-permission')
             group = elem.get_attribute('data-permission-group')
