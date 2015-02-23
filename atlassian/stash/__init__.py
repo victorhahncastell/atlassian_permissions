@@ -52,6 +52,9 @@ class Stash(Service):
             # project permissions
             permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/{{}}'.format(projectkey)))
             # TODO personal repo permissions?
+        for permission, permission_types in permissions.items():
+            for permission_type, members in permission_types.items():
+                yield PermissionEntry(permission, permission_type, members)
 
     def _get_permissions(self, api):
         permissions = defaultdict(lambda: defaultdict(list))
