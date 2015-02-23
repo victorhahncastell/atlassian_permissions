@@ -91,7 +91,7 @@ class PermissionCollector:
         self.password = password
 
     def get_permissions(self):
-        permissions = defaultdict(lambda: defaultdict())
+        permissions = defaultdict(lambda: defaultdict(lambda: defaultdict()))
         for s in self.services:
             s.login(self.user, self.password)
             for p in s.get_projects():
