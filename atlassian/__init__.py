@@ -118,7 +118,7 @@ class HTTPClient:
     def get(self, url):
         url = urlsplit(url)
         url = url[2:]
-        request_url = urljoin(self.base, url)
+        request_url = urljoin(self.base, url[0])
         if self.user is not None:
             response = get(request_url, auth=(self.user, self.password))
         else:
