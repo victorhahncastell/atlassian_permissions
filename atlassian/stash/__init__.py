@@ -21,7 +21,8 @@ class Stash(Service):
         return self._data['client']
 
     def login(self, user, password):
-        self._data['client'] = HTTPClient(self.url, user=self.user, password=self.password)
+        super().login(user, password)
+        self._data['client'] = HTTPClient(self.url, user=user, password=password)
 
     def logout(self):
         pass  # TODO logout of stash
