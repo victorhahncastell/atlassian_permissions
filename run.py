@@ -56,6 +56,8 @@ def main():
     parser.add_argument('--save', '-S', help='Save to file')
     parser.add_argument('--load', '-l', help='Load from file')
     parser.add_argument('--export', '-e', help='Export CSV data to this file')
+    parser.add_argument('--csv-users', help='Enable CSV users', action='store_true')
+    parser.add_argument('--csv-permissions', help='Enable CSV permissions', action='store_true')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(loglevel, int):
@@ -98,10 +100,12 @@ def main():
             permline.append('service')
             permline.append('project')
             permline.append('type')
-            for p in permission_names:
-                permline.append(p)
-            for m in member_names:
-                permline.append(m)
+            if args.csv_permissions:
+                for p in permission_names:
+                    permline.append(p)
+            if args.csv_users:
+                for m in member_names:
+                    permline.append(m)
             writer.writerow(permline)
 
             for permission in perms:
@@ -109,16 +113,18 @@ def main():
                 permline.append(permission['service'])
                 permline.append(permission['project'])
                 permline.append(permission['member_type'])
-                for p in permission_names:
-                    if permission['permission'] == p:
-                        permline.append(';'.join(permission['prefix_members']))
-                    else:
-                        permline.append(None)
-                for m in member_names:
-                    if m in permission['prefix_members']:
-                        permline.append(permission['permission'])
-                    else:
-                        permline.append(None)
+                if args.csv_permissions:
+                    for p in permission_names:
+                        if permission['permission'] == p:
+                            permline.append(';'.join(permission['prefix_members']))
+                        else:
+                            permline.append(None)
+                if args.csv_users:
+                    for m in member_names:
+                        if m in permission['prefix_members']:
+                            permline.append(permission['permission'])
+                        else:
+                            permline.append(None)
                 writer.writerow(permline)
 
     if args.save:
