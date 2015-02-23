@@ -51,7 +51,7 @@ class Stash(Service):
                     projectKey=projectkey, repositorySlug=repo_slug)))
         else:
             # project permissions
-            permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/{{}}'.format(projectkey)))
+            permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/permissions/{{}}'.format(projectkey)))
             # TODO personal repo permissions?
         for permission, permission_types in permissions.items():
             for permission_type, members in permission_types.items():
