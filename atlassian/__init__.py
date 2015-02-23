@@ -96,7 +96,7 @@ class PermissionCollector:
             s.login(self.user, self.password)
             for p in s.get_projects():
                 permissions[s.name][p.key]['__meta'] = p.data
-                permissions[s.name][p.key] = s.get_permissions(p.key)
+                permissions[s.name][p.key] = list(s.get_permissions(p.key))
             s.logout()
         return permissions
 
