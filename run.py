@@ -44,17 +44,6 @@ def get_services(confluence, jira, stash):
     return services
 
 
-class Numberer:
-    def __init__(self, start=0):
-        self.start = start
-        self.elements = []
-
-    def get(self, elem):
-        if elem not in self.elements:
-            self.elements.append(elem)
-        return self.elements.index(elem) + self.start
-
-
 def main():
     parser = ArgumentParser()
     parser.add_argument('--loglevel', default='WARNING', help="Loglevel", action='store')
@@ -82,22 +71,56 @@ def main():
 
         pc = PermissionCollector(services, args.user, password)
         permissions = pc.get_permissions()
+
     if args.export:
-        n = Numberer(start=2)
+        perms = []
+        permission_names = []
+        member_names = []
+        for service, projects in permissions.items():
+            for project, data in projects.items():
+                for permission in data['permissions']:
+                    prefix_members = []
+                    permission_names.append(permission.permission)
+                    if permission.type == PermissionEntry.USER:
+                        prefix = 'u'
+                    elif permission.type == PermissionEntry.GROUP:
+                        prefix = 'g'
+
+                    for member in permission.member_names:
+                        name = '{}:{}'.format(prefix, member)
+                        member_names.append(name)
+                        prefix_members.append(name)
+                    perms.append({'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': prefix_members})
+
         with open(args.export, 'w', newline='') as fd:
+            permline = []
             writer = csv.writer(fd, dialect='unix')
-            for service, projects in permissions.items():
-                for project, data in projects.items():
-                    for permission in data['permissions']:
-                        permline = [service, project]
-                        if permission.type == PermissionEnty.USER:
-                            memberprefix = 'u'
-                        elif permission.type == PermissionEntry.GROUP:
-                            memberprefix = 'g'
-                        for member in permission.members:
-                            permline[n.get('{}:{}'.format(memberprefix, member))] = permission.permission
-                        permline[n.get(permission.permission)] = ';'.join(permission.members)
-                        writer.writerow(permline)
+            permline.append('service')
+            permline.append('project')
+            permline.append('type')
+            for p in permission_names:
+                permline.append(p)
+            for m in member_names:
+                permline.append(m)
+            writer.writerow(permline)
+
+            for permission in perms:
+                permline = []
+                permline.append(permission['service'])
+                permline.append(permission['project'])
+                permline.append(permission['member_type'])
+                for p in permission_names:
+                    if permission['permission'] == p:
+                        permline.append(';'.join(permission['prefix_members']))
+                    else:
+                        permline.append(None)
+                for m in member_names:
+                    if m in permission['prefix_members']:
+                        permline.append(permission['permission'])
+                    else:
+                        permline.append(None)
+                writer.writerow(permline)
+
     if args.save:
         with open(args.save, 'wb') as fd:
             pickle.dump(permissions, fd)
