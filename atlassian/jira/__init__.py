@@ -35,7 +35,7 @@ class Jira(Service):
         for name, url in self.get_roles(projectkey).items():
             role = self.client.get(url)
             for actor in role.get('actors', ()):
-                if actor['type'] is 'atlassian-group-role-actor':
+                if actor['type'] in 'atlassian-group-role-actor':
                     permissions[name][PermissionEntry.GROUP].append(actor['name'])
                 elif actor['type'] in 'atlassian-user-role-actor':
                     permissions[name][PermissionEntry.USER].append(actor['name'])
