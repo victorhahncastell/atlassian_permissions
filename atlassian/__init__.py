@@ -99,12 +99,15 @@ class PermissionCollector:
         self.password = password
 
     def get_permissions(self):
-        permissions = defaultdict(lambda: defaultdict(lambda: defaultdict()))
+        permissions = {}
         for s in self.services:
             s.login(self.user, self.password)
             for p in s.get_projects():
-                permissions[s.name][p.key]['__meta'] = p.data
-                permissions[s.name][p.key] = list(s.get_permissions(p.key))
+                if s.name not in permissions:
+                    permissions[s.name] = {}
+                if p.key not in permissions[s.name]:
+                    permissions[s.name][p.key] = p.data
+                permissions[s.name][p.key]['permissions'] = list(s.get_permissions(p.key))
             s.logout()
         return permissions
 
