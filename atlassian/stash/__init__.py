@@ -62,7 +62,12 @@ class Stash(Service):
         return permissions
 
     def _get_pages(self, url):
-        url = urljoin(url, '&'.join((urlsplit(url).query, 'start={}')))
+        query_args = []
+        split_url = urlsplit(url)
+        if len(split_url.query) > 0:
+            query_args.append(split_url.query)
+        query_args.append('start={}')
+        url = urljoin(url, '?' + '&'.join(query_args))
         response = {'isLastPage': False}
         values = []
         start = 0
