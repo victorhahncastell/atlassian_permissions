@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+import csv
 import logging
 from pprint import pprint
 from argparse import ArgumentParser
 import pickle
 
-from atlassian import PermissionCollector
+from atlassian import PermissionCollector, PermissionEntry
 from atlassian.confluence import Confluence
 from atlassian.jira import Jira
 from atlassian.stash import Stash
@@ -43,6 +44,17 @@ def get_services(confluence, jira, stash):
     return services
 
 
+class Numberer:
+    def __init__(self, start=0):
+        self.start = start
+        self.elements = []
+
+    def get(self, elem):
+        if elem not in self.elements:
+            self.elements.append(elem)
+        return self.elements.index(elem) + self.start
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument('--loglevel', default='WARNING', help="Loglevel", action='store')
@@ -53,6 +65,7 @@ def main():
     parser.add_argument('--jira', '-j', help='Add JIRA instance', action='append')
     parser.add_argument('--stash', '-s', help='Add Stash instance', action='append')
     parser.add_argument('--save', '-S', help='Save to file')
+    parser.add_argument('--export', '-e', help='Export CSV data to this file')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(loglevel, int):
@@ -64,6 +77,22 @@ def main():
 
     pc = PermissionCollector(services, args.user, password)
     permissions = pc.get_permissions()
+    if args.export:
+        n = Numberer(start=2)
+        with open(args.export, 'w', newline='') as fd:
+            writer = csv.writer(fd, dialect='unix')
+            for service, projects in permissions.items():
+                for project, data in projects.items():
+                    for permission in data['permissions']:
+                        permline = [service, project]
+                        if permission.type == PermissionEnty.USER:
+                            memberprefix = 'u'
+                        elif permission.type == PermissionEntry.GROUP:
+                            memberprefix = 'g'
+                        for member in permission.members:
+                            permline[n.get('{}:{}'.format(memberprefix, member))] = permission.permission
+                        permline[n.get(permission.permission)] = ';'.join(permission.members)
+                        writer.writerow(permline)
     if args.save:
         with open(args.save, 'wb') as fd:
             pickle.dump(permissions, fd)
