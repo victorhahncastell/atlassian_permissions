@@ -43,7 +43,7 @@ class Jira(Service):
                     self.l.error('Could not match type "{}" to user or group'.format(actor['type']),
                                  extra={'actor': actor})
         for perm, types in permissions.items():
-            for type, members in types:
+            for type, members in types.items():
                 yield PermissionEntry(perm, type, members)
 
     def get_roles(self, projectkey):
