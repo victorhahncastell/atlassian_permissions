@@ -45,9 +45,10 @@ class Stash(Service):
             permissions.update(self._get_permissions('/rest/api/1.0/admin/permissions/{}'))
         elif self.REPO_DELIM in projectkey:
             # repo permissions
+            projectkey, repo_slug = projectkey.split(':')
             permissions.update(self._get_permissions(
                 '/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/permissions/{{}}'.format(
-                    projectKey=projectkey, repositorySlug=repo['slug'])))
+                    projectKey=projectkey, repositorySlug=repo_slug)))
         else:
             # project permissions
             permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/{{}}'.format(projectkey)))
