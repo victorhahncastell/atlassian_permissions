@@ -35,6 +35,8 @@ class Stash(Service):
             yield Project(proj)
             for repo in self._get_pages('/rest/api/1.0/projects/{projectKey}/repos'.format(projectKey=projectkey)):
                 repo['key'] = '{}{}{}'.format(projectkey, self.REPO_DELIM, repo['slug'])
+                del repo['cloneUrl']
+                del repo['links']['clone']
                 yield Project(repo)
 
     def get_permissions(self, projectkey):
