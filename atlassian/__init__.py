@@ -81,9 +81,9 @@ class PermissionEntry:
     def __repr__(self):
         strng = None
         if self.type is self.USER:
-            strng = '{}:USERS={}'
+            strng = '{}→USERS({})'
         elif self.type is self.GROUP:
-            strng = '{}:GROUPS={}'
+            strng = '{}→GROUPS({})'
         return strng.format(self.permission, ', '.join(self.member_names))
 
     def __init__(self, permission, type, member_names):
