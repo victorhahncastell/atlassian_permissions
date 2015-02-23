@@ -11,6 +11,8 @@ l = logging.getLogger(__name__)
 
 
 class Jira(Service):
+    name = 'Jira'
+
     @property
     def client(self):
         if 'client' not in self._data:

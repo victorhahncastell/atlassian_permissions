@@ -13,6 +13,7 @@ l = logging.getLogger(__name__)
 class Stash(Service):
     GLOBALKEY = 'STASH-GLOBAL'
     REPO_DELIM = ':'
+    name = 'Stash'
 
     @property
     def client(self):
