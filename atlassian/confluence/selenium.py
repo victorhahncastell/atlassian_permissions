@@ -49,8 +49,8 @@ class Confluence:
         return True
 
     def logout(self):
+        self.driver.quit()
         # TODO maybe implement a logout process?
-        pass
 
     def get_space_permissions(self, key):
         assert self.logged_in, 'Not logged in.'
