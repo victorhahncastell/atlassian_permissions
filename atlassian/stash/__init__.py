@@ -54,7 +54,7 @@ class Stash(Service):
             # TODO personal repo permissions?
 
     def _get_permissions(self, api):
-        permissions = defaultdict(lambda: defaultdict(lambda: list))
+        permissions = defaultdict(lambda: defaultdict(list))
         for api_endpoint, response_key, permission_type in (('groups', 'group', PermissionEntry.GROUP),
                                                             ('users', 'user', PermissionEntry.USER)):
             for value in self._get_pages(api.format(api_endpoint)):
