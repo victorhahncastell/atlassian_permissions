@@ -78,6 +78,14 @@ class Project:
 class PermissionEntry:
     USER, GROUP = range(2)
 
+    def __repr__(self):
+        strng = None
+        if self.type is self.USER:
+            strng = '{}:USERS={}'
+        elif self.type is self.GROUP:
+            strng = '{}:GROUPS={}'
+        return strng.format(self.permission, ', '.join(self.member_names))
+
     def __init__(self, permission, type, member_names):
         self.permission = permission
         self.type = type
