@@ -77,13 +77,13 @@ def main():
 
     if args.export:
         perms = []
-        permission_names = []
-        member_names = []
+        permission_names = set()
+        member_names = set()
         for service, projects in permissions.items():
             for project, data in projects.items():
                 for permission in data['permissions']:
-                    prefix_members = []
-                    permission_names.append(permission.permission)
+                    prefix_members = set()
+                    permission_names.add(permission.permission)
                     if permission.type == PermissionEntry.USER:
                         prefix = 'u'
                     elif permission.type == PermissionEntry.GROUP:
@@ -91,9 +91,9 @@ def main():
 
                     for member in permission.member_names:
                         name = '{}:{}'.format(prefix, member)
-                        member_names.append(name)
-                        prefix_members.append(name)
-                    perms.append({'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': prefix_members})
+                        member_names.add(name)
+                        prefix_members.add(name)
+                    perms.append({'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': list(prefix_members)})
 
         with open(args.export, 'w', newline='') as fd:
             permline = []
