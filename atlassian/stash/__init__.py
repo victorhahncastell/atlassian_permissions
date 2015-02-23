@@ -76,6 +76,8 @@ class Stash(Service):
         start = 0
         while not response['isLastPage']:
             response = self.client.get(url.format(start))
+            if response is None:
+                return []
             start = response['size'] - 1
             values += response['values']
         return values
