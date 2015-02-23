@@ -2,6 +2,7 @@
 import logging
 from pprint import pprint
 from argparse import ArgumentParser
+import pickle
 
 from atlassian import PermissionCollector
 from atlassian.confluence import Confluence
@@ -51,6 +52,7 @@ def main():
     parser.add_argument('--confluence', '-c', help='Add Confluence instance', action='append')
     parser.add_argument('--jira', '-j', help='Add JIRA instance', action='append')
     parser.add_argument('--stash', '-s', help='Add Stash instance', action='append')
+    parser.add_argument('--save', '-S', help='Save to file')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(loglevel, int):
@@ -61,7 +63,12 @@ def main():
     services = get_services(args.confluence, args.jira, args.stash)
 
     pc = PermissionCollector(services, args.user, password)
-    pprint(pc.get_permissions())
+    permissions = pc.get_permissions()
+    if args.save:
+        with open(args.save, 'w') as fd:
+            pickle.dump(permissions, fd)
+    else:
+        pprint(permissions)
 
 
 if __name__ == '__main__':
