@@ -65,7 +65,7 @@ def main():
     pc = PermissionCollector(services, args.user, password)
     permissions = pc.get_permissions()
     if args.save:
-        with open(args.save, 'w') as fd:
+        with open(args.save, 'wb') as fd:
             pickle.dump(permissions, fd)
     else:
         pprint(permissions)
