@@ -126,8 +126,5 @@ class HTTPClient:
             response = get(request_url, auth=(self.user, self.password))
         else:
             response = get(request_url)
-        assert response.status_code in (200, 404), 'Error when requesting {}.'.format(request_url)
-        if response.status_code == 404:
-            return None
-        else:
-            return response.json()
+        assert response.status_code is 200, 'Error when requesting {}.'.format(request_url)
+        return response.json()
