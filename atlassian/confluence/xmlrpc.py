@@ -21,6 +21,9 @@ class Confluence:
         assert self.token is not None, 'Login failed'
         return self.token
 
+    def logout(self):
+        pass  # TODO logout from Confluence via XMLRPC
+
     def get_spaces(self):
         spaces = self.server.confluence1.getSpaces(self.token)
         self.l.debug('get_spaces', extra={'spaces': spaces})
