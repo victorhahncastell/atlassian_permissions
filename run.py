@@ -58,6 +58,7 @@ def main():
     parser.add_argument('--export', '-e', help='Export CSV data to this file')
     parser.add_argument('--csv-users', help='Enable CSV users', action='store_true')
     parser.add_argument('--csv-permissions', help='Enable CSV permissions', action='store_true')
+    parser.add_argument('--csv-merged', help='Merge CSV entries together per project', action='store_true')
     parser.add_argument('--print', help='Pretty-print permissions', action='store_true')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
@@ -77,10 +78,12 @@ def main():
 
     if args.export:
         perms = []
+        merged_perms = []
         permission_names = set()
         member_names = set()
         for service, projects in permissions.items():
             for project, data in projects.items():
+                project_perms = []
                 for permission in data['permissions']:
                     prefix_members = set()
                     permission_names.add(permission.permission)
@@ -93,14 +96,27 @@ def main():
                         name = '{}:{}'.format(prefix, member)
                         member_names.add(name)
                         prefix_members.add(name)
-                    perms.append({'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': list(prefix_members)})
+                    perm = {'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': list(prefix_members)}
+                    perms.append(perm)
+                    project_perms.append(perm)
+                project_perm = {'service': service, 'project': project}
+                for perm in project_perms:
+                    if perm['permission'] in project_perm:
+                        project_perm[perm['permission']] += perm['prefix_members']
+                    else:
+                        project_perm[perm['permission']] = perm['prefix_members']
+                    for member in perm['prefix_members']:
+                        if member in project_perm:
+                            project_perm[member] += [perm['permission']]
+                        else:
+                            project_perm[member] = [perm['permission']]
+                merged_perms.append(project_perm)
 
         with open(args.export, 'w', newline='') as fd:
             permline = []
             writer = csv.writer(fd, dialect='unix')
             permline.append('service')
             permline.append('project')
-            permline.append('type')
             if args.csv_permissions:
                 for p in permission_names:
                     permline.append(p)
@@ -109,24 +125,42 @@ def main():
                     permline.append(m)
             writer.writerow(permline)
 
-            for permission in perms:
-                permline = []
-                permline.append(permission['service'])
-                permline.append(permission['project'])
-                permline.append(permission['member_type'])
-                if args.csv_permissions:
-                    for p in permission_names:
-                        if permission['permission'] == p:
-                            permline.append(';'.join(permission['prefix_members']))
-                        else:
-                            permline.append(None)
-                if args.csv_users:
-                    for m in member_names:
-                        if m in permission['prefix_members']:
-                            permline.append(permission['permission'])
-                        else:
-                            permline.append(None)
-                writer.writerow(permline)
+            if args.csv_merged:
+                for permission in merged_perms:
+                    permline = []
+                    permline.append(permission['service'])
+                    permline.append(permission['project'])
+                    if args.csv_permissions:
+                        for p in permission_names:
+                            if p in permission:
+                                permline.append(';'.join(permission[p]))
+                            else:
+                                permline.append(None)
+                    if args.csv_users:
+                        for m in member_names:
+                            if m in permission:
+                                permline.append(';'.join(permission[m]))
+                            else:
+                                permline.append(None)
+                    writer.writerow(permline)
+            else:
+                for permission in perms:
+                    permline = []
+                    permline.append(permission['service'])
+                    permline.append(permission['project'])
+                    if args.csv_permissions:
+                        for p in permission_names:
+                            if permission['permission'] == p:
+                                permline.append(';'.join(permission['prefix_members']))
+                            else:
+                                permline.append(None)
+                    if args.csv_users:
+                        for m in member_names:
+                            if m in permission['prefix_members']:
+                                permline.append(permission['permission'])
+                            else:
+                                permline.append(None)
+                    writer.writerow(permline)
 
     if args.save:
         with open(args.save, 'wb') as fd:
