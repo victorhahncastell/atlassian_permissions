@@ -58,6 +58,7 @@ def main():
     parser.add_argument('--export', '-e', help='Export CSV data to this file')
     parser.add_argument('--csv-users', help='Enable CSV users', action='store_true')
     parser.add_argument('--csv-permissions', help='Enable CSV permissions', action='store_true')
+    parser.add_argument('--print', help='Pretty-print permissions', action='store_true')
     args = parser.parse_args()
     loglevel = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(loglevel, int):
@@ -130,7 +131,7 @@ def main():
     if args.save:
         with open(args.save, 'wb') as fd:
             pickle.dump(permissions, fd)
-    else:
+    if args.print:
         pprint(permissions)
 
 
