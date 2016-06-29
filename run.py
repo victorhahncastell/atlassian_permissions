@@ -4,6 +4,7 @@ import logging
 from pprint import pprint
 from argparse import ArgumentParser
 import pickle
+import sys
 
 from atlassian import PermissionCollector, PermissionEntry
 from atlassian.confluence import Confluence
@@ -11,11 +12,11 @@ from atlassian.jira import Jira
 from atlassian.stash import Stash
 
 
-__author__ = 'Sýlvan Heuser'
+__author__ = 'Sýlvan Heuser, Victor Hahn'
 l = logging.getLogger(__name__)
 
 
-def get_password(passwordarg, filearg):
+def get_password(passwordarg, filearg, parser):
     password = None
     if passwordarg is not None:
         password = passwordarg
@@ -26,41 +27,69 @@ def get_password(passwordarg, filearg):
         # TODO interactively acquire password
         pass
     assert password is not None, 'Password is empty'
-    return password
+    if password:
+      return password
+    else:
+      parser.error("Please provide a valid password.")
 
 
 def get_services(confluence, jira, stash):
     services = []
     for arguments, service in ((confluence, Confluence), (jira, Jira), (stash, Stash)):
         if arguments is not None:
+            print(arguments)
+
             for uri in arguments:
+                print()
+                print(uri)
                 version = None
                 if ',version=' in uri:
                     versionstr = uri.split(',')[-1]
                     version = tuple(versionstr.split('=')[-1].split('.'))
                     uri = ','.join(uri.split(',')[:-1])
                 services.append(service(uri, version=version))
-    assert services, 'No services specified'
     return services
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('--loglevel', default='WARNING', help="Loglevel", action='store')
-    parser.add_argument('user', help='User to log in with')
-    parser.add_argument('--password', '-p', help='Password')
-    parser.add_argument('--passfile', '-P', help='Password file')
-    parser.add_argument('--confluence', '-c', help='Add Confluence instance', action='append')
-    parser.add_argument('--jira', '-j', help='Add JIRA instance', action='append')
-    parser.add_argument('--stash', '-s', help='Add Stash instance', action='append')
-    parser.add_argument('--save', '-S', help='Save to file')
-    parser.add_argument('--load', '-l', help='Load from file')
-    parser.add_argument('--export', '-e', help='Export CSV data to this file')
-    parser.add_argument('--csv-users', help='Enable CSV users', action='store_true')
-    parser.add_argument('--csv-permissions', help='Enable CSV permissions', action='store_true')
-    parser.add_argument('--csv-merged', help='Merge CSV entries together per project', action='store_true')
-    parser.add_argument('--print', help='Pretty-print permissions', action='store_true')
+
+    auth = parser.add_argument_group("Authentication",
+                                     "Please provide administrative credentials so this script can access your Atlassian services.")
+    auth.add_argument('--user', '-u', help='User to log in with', required=True)
+    passwordargs = auth.add_mutually_exclusive_group(required=True)
+    passwordargs.add_argument('--password', '-p', help='Password')
+    passwordargs.add_argument('--passfile', '-P', help='Password file')
+
+    services = parser.add_argument_group("Services",
+                                         '''\
+                                         Add at least one Atlassian service to check. You can provide multiple instances of each kind.
+                                         Please provide the complete URL including either http:// or https://, e.g. https://confluence.myserver.example.com.
+                                         You can add a hint telling us the Confluence version you're running like this:
+                                         https://confluence.myserver.example.com,version=5.8.14''')
+    services.add_argument('--confluence', '-c', help='Add Confluence instance.', action='append')
+    services.add_argument('--jira', '-j', help='Add JIRA instance.', action='append')
+    services.add_argument('--stash', '-s', help='Add Bitbucket Server instance, formerly known as Stash.', action='append')
+
+    action = parser.add_argument_group("Action", "What do you actually want to do?")
+    action.add_argument('--export', '-e',
+                        help='Export CSV data to this file')
+    action.add_argument('--print', action='store_true',
+                        help='Pretty-print permissions')
+    action.add_argument('--csv-users', help='For CSV export, include users', action='store_true')
+    action.add_argument('--csv-permissions', help='For CSV export, include permissions', action='store_true')
+    action.add_argument('--csv-merged', help='For CSV export, merge entries together per project', action='store_true')
+
+    optional = parser.add_argument_group("optional arguments")
+    optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
+    optional.add_argument('--load', '-l', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
+    optional.add_argument('--loglevel', default='WARNING', help="Loglevel", action='store')
+
+
     args = parser.parse_args()
+    if not (args.print or args.export or args.save):
+      parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
+
     loglevel = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(loglevel, int):
         raise ValueError('Invalid log level: {}'.format(args.loglevel))
@@ -70,7 +99,7 @@ def main():
         with open(args.load, 'rb') as fd:
             permissions = pickle.load(fd)
     else:
-        password = get_password(args.password, args.passfile)
+        password = get_password(args.password, args.passfile, parser)
         services = get_services(args.confluence, args.jira, args.stash)
 
         pc = PermissionCollector(services, args.user, password)
@@ -171,4 +200,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
