@@ -47,8 +47,8 @@ def main():
 
     optional = parser.add_argument_group("optional arguments")
     optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
-    optional.add_argument('--load', '-l', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
-    optional.add_argument('--loglevel', default='WARNING', help="Loglevel", action='store')
+    optional.add_argument('--load', '-L', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
+    optional.add_argument('--loglevel', '-l', default='WARNING', help="Loglevel", action='store')
 
     # Parse arguments and provide further validation
     args = parser.parse_args()
