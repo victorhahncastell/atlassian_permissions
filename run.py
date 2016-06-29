@@ -3,6 +3,7 @@ import csv
 import logging
 from pprint import pprint
 from argparse import ArgumentParser
+from getpass import getpass
 import pickle
 import sys
 
@@ -22,7 +23,7 @@ def main():
     auth = parser.add_argument_group("Authentication",
                                      "Please provide administrative credentials so this script can access your Atlassian services.")
     auth.add_argument('--user', '-u', help='User to log in with', required=True)
-    passwordargs = auth.add_mutually_exclusive_group(required=True)
+    passwordargs = auth.add_mutually_exclusive_group()
     passwordargs.add_argument('--password', '-p', help='Password')
     passwordargs.add_argument('--passfile', '-P', help='Password file')
 
@@ -91,10 +92,8 @@ def get_password(passwordarg, filearg, parser):
     elif filearg is not None:
         with open(filearg, 'r') as fd:
             password = fd.read()
-    else:
-        # TODO interactively acquire password
-        pass
-    assert password is not None, 'Password is empty'
+    else: # get it interactively
+        password = getpass()
     if password:
         return password
     else:
