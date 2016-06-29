@@ -75,13 +75,13 @@ def main():
         permissions = pc.get_permissions()
 
     if args.export:
-      export_csv()
+      export_csv(permissions, args.export, args.csv_permissions, args.csv_users, args.csv_merged)
 
     if args.save:
         with open(args.save, 'wb') as fd:
             pickle.dump(permissions, fd)
     if args.print:
-        pprint(permissions, args.export, args.csv_permissions, args.csv_users, args.csv_merged)
+        pprint(permissions)
 
 
 def get_password(passwordarg, filearg, parser):
