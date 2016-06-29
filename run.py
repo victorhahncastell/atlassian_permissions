@@ -106,6 +106,10 @@ def get_services(confluence, jira, stash, parser):
     for arguments, service in ((confluence, Confluence), (jira, Jira), (stash, Stash)):
         if arguments is not None:
             for uri in arguments:
+                # validate URL:
+                if not (uri.startswith("http://") or uri.startswith("https://")):
+                  parser.error("Please provide the complete URLs of your Atlassian instances, starting either in http:// or https://.")
+
                 version = None
                 if ',version=' in uri:
                     versionstr = uri.split(',')[-1]
