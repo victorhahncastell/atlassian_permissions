@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from getpass import getpass
 import pickle
 import sys
+from deepdiff import DeepDiff
 
 from atlassian import PermissionCollector, PermissionEntry
 from atlassian.confluence import Confluence
@@ -22,7 +23,7 @@ def main():
 
     auth = parser.add_argument_group("Authentication",
                                      "Please provide administrative credentials so this script can access your Atlassian services.")
-    auth.add_argument('--user', '-u', help='User to log in with', required=True)
+    auth.add_argument('--user', '-u', help='User to log in with')
     passwordargs = auth.add_mutually_exclusive_group()
     passwordargs.add_argument('--password', '-p', help='Password')
     passwordargs.add_argument('--passfile', '-P', help='Password file')
@@ -50,12 +51,21 @@ def main():
     optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
     optional.add_argument('--load', '-L', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
     optional.add_argument('--loglevel', '-l', default='WARNING', help="Loglevel", action='store')
+    optional.add_argument('--compare', '-cmp', help="Compare to previous state, show changes only. Will compare to a file previously saved with --save. Provide this file's name here.")
 
     # Parse arguments and provide further validation
     args = parser.parse_args()
 
     if not (args.print or args.export or args.save):
       parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
+
+    if not (args.password or args.passfile or args.load):
+      parser.error("Error: Please use --password or --passfile to specify credentials.")
+
+    # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
+    # TODO: fix this
+    if (args.export and args.compare):
+      parser.error("Error: This tool currently can't export comparisons as CSV. Use --print instead.")
 
     # Set log level
     loglevel = getattr(logging, args.loglevel.upper(), None)
@@ -74,6 +84,12 @@ def main():
 
         pc = PermissionCollector(services, args.user, password)
         permissions = pc.get_permissions()
+
+    if args.compare:
+        with open(args.compare, 'rb') as fd:
+            current_permissions = permissions
+            previous_permissions = pickle.load(fd)
+            permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
 
     if args.export:
       export_csv(permissions, args.export, args.csv_permissions, args.csv_users, args.csv_merged)
