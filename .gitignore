@@ -60,3 +60,8 @@ target/
 # Platform specific bullshit
 .DS_Store
 
+
+# Project specific
+*.pickle
+/*.txt
+
