@@ -14,7 +14,7 @@ class Service(metaclass=ABCMeta):
     Abstract class for services like Confluence, JIRA, Stash, etc
     """
 
-    def __init__(self, url, version=None):
+    def __init__(self, url, version=None, selenium_workaround=False):
         """
         :param url: URL of service
         :param version: tuple of version information
@@ -22,6 +22,7 @@ class Service(metaclass=ABCMeta):
         self.l = logging.getLogger('{}.{}'.format(__name__, self.__class__.__name__))
         self.url = url
         self.version = version if version is not None else (0, 1, 0)
+        self.selenium_workaround = selenium_workaround
         self.user = None
         self._logged_in = False
         self.server = None

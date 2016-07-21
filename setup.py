@@ -11,7 +11,6 @@ setup(
     packages=find_packages(),
     scripts=['run.py'],
     install_requires=[
-        'selenium>=2.44.0',
         'requests>=2.5.1',
         'deepdiff>=1.5.0'
     ]

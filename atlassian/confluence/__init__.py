@@ -1,7 +1,6 @@
 import logging
 
 from .. import Service
-from .selenium import Confluence as ConfluenceWebDriver
 from .xmlrpc import Confluence as ConfluenceXMLRPC
 
 
@@ -10,11 +9,13 @@ l = logging.getLogger(__name__)
 
 
 class Confluence(Service):
+    # TODO: get version from API
     name = 'Confluence'
     space_permissions_supported_from = (5, 5)
 
     def login(self, user, password):
-        if self.version < self.space_permissions_supported_from:
+        if (self.selenium_workaround) and (self.version < self.space_permissions_supported_from):
+            from .selenium import Confluence as ConfluenceWebDriver
             self._data['selenium'] = ConfluenceWebDriver(self.url)
             self._data['selenium'].login(user, password)
         self._data['xmlrpc'] = ConfluenceXMLRPC(self.url)
@@ -25,7 +26,7 @@ class Confluence(Service):
         yield from self._data['xmlrpc'].get_spaces()
 
     def get_permissions(self, projectkey):
-        if self.version < self.space_permissions_supported_from:
+        if (self.selenium_workaround) and (self.version < self.space_permissions_supported_from):
             yield from self._data['selenium'].get_permissions(projectkey)
         else:
             yield from self._data['xmlrpc'].get_permissions(projectkey)

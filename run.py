@@ -52,6 +52,9 @@ def main():
     optional.add_argument('--load', '-L', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
     optional.add_argument('--loglevel', '-l', default='WARNING', help="Loglevel", action='store')
     optional.add_argument('--compare', '-cmp', help="Compare to previous state, show changes only. Will compare to a file previously saved with --save. Provide this file's name here.")
+    optional.add_argument('--selenium',
+                          help="Try to use outdated and probably broken Selenium workaround for old Confluence versions (< 5.5). " +
+                               "This will try to start your browser and fetch data from the web interface.")
 
     # Parse arguments and provide further validation
     args = parser.parse_args()
@@ -80,7 +83,7 @@ def main():
             permissions = pickle.load(fd)
     else:
         password = get_password(args.password, args.passfile, parser)
-        services = get_services(args.confluence, args.jira, args.stash, parser)
+        services = get_services(args.confluence, args.jira, args.stash, parser, args.selenium)
 
         pc = PermissionCollector(services, args.user, password)
         permissions = pc.get_permissions()
@@ -116,7 +119,7 @@ def get_password(passwordarg, filearg, parser):
         parser.error("Please provide a valid password.")
 
 
-def get_services(confluence, jira, stash, parser):
+def get_services(confluence, jira, stash, parser, selenium_workaround):
     services = []
     for arguments, service in ((confluence, Confluence), (jira, Jira), (stash, Stash)):
         if arguments is not None:
@@ -130,7 +133,7 @@ def get_services(confluence, jira, stash, parser):
                     versionstr = uri.split(',')[-1]
                     version = tuple(versionstr.split('=')[-1].split('.'))
                     uri = ','.join(uri.split(',')[:-1])
-                services.append(service(uri, version=version))
+                services.append(service(uri, version=version, selenium_workaround = selenium_workaround))
     return services
 
 
