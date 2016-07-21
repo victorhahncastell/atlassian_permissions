@@ -1,0 +1,22 @@
+{
+Jira:
+  {
+  Project_Key1:
+    - name
+    - (other meta info)
+    - permissions: <PermissionDict>
+      <PermissionEntry>
+        - permission:
+          - <str>
+        - users:
+          - [User1, User2, ...]
+        - groups:
+          - [Group1, Group2, ...]
+  - Project_Key2:
+    - ...
+,
+Confluence: <dict>
+  - ...
+,
+Stash: <dict>
+  - ...
