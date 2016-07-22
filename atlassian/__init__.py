@@ -6,7 +6,7 @@ from urllib.parse import urlsplit, urljoin
 from requests import get
 
 
-__author__ = 'Sýlvan Heuser'
+__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 
 
 class Service(metaclass=ABCMeta):
@@ -76,21 +76,56 @@ class Project:
         return self.data.get('key', None)
 
 
+class PermissionDict(dict):
+    def __missing__(self, key):
+        return None
+
+    def add_permission(self, permission: str, users=[], groups=[]):
+        """Same syntax as PermissionEntry constructor. Creates a new permission entry or amends and existing one."""
+        if self[permission]:
+            self[permission].additional(users, groups)
+        else:
+            self[permission] = PermissionEntry(permission, users, groups)
+
 class PermissionEntry:
-    USER, GROUP = range(2)
+    def __init__(self, permission, users = None, groups = None):
+        self.permission = permission
+        self.users = set()
+        self.groups = set()
+        self.additional(users, groups)
 
     def __repr__(self):
-        strng = None
-        if self.type is self.USER:
-            strng = '{}→USERS({})'
-        elif self.type is self.GROUP:
-            strng = '{}→GROUPS({})'
-        return strng.format(self.permission, ', '.join(self.member_names))
+        prefix = self.permission + ": "
+        user_strng = None
+        group_strng = None
 
-    def __init__(self, permission, type, member_names):
-        self.permission = permission
-        self.type = type
-        self.member_names = member_names
+        if len(self.users):
+            user_strng = 'USERS({})'
+            user_strng = user_strng.format(self.permission, ', '.join(self.users))
+        if len(self.groups):
+            group_strng = 'GROUPS({})'
+            group_strng = group_strng.format(self.permission, ', '.join(self.groups))
+        if user_strng:
+            if group_strng:
+                return prefix + user_strng + ", " + group_strng
+            else:
+                return prefix + user_strng
+        elif group_strng:
+            return group_strng
+        else:
+            return prefix + "None"
+
+    def additional(self, users = None, groups = None):
+        """Extend this privilege to the specified users and groups"""
+        if users:
+            if not isinstance(users, set):
+                users = {users}
+            self.users = self.users | users
+        if groups:
+            if not isinstance(groups, set):
+                groups = {groups}
+            self.groups = self.groups | groups
+
 
 
 class PermissionCollector:
@@ -108,7 +143,9 @@ class PermissionCollector:
                     permissions[s.name] = {}
                 if p.key not in permissions[s.name]:
                     permissions[s.name][p.key] = p.data
-                permissions[s.name][p.key]['permissions'] = list(s.get_permissions(p.key))
+                permissions[s.name][p.key]['permissions'] = PermissionDict()
+                for permission, users, groups in s.get_permissions(p.key):
+                    permissions[s.name][p.key]['permissions'].add_permission(permission, users, groups)
             s.logout()
         return permissions
 

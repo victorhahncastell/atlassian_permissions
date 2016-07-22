@@ -6,7 +6,7 @@ from .. import HTTPClient
 from atlassian import Service, PermissionEntry, Project
 
 
-__author__ = 'Sýlvan Heuser'
+__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 
@@ -31,20 +31,17 @@ class Jira(Service):
             yield Project(project)
 
     def get_permissions(self, projectkey):
-        permissions = defaultdict(lambda: defaultdict(lambda: list()))
-        for name, url in self.get_roles(projectkey).items():
+        roles = self.get_roles(projectkey)
+        for name, url in roles.items():
             role = self.client.get(url)
             for actor in role.get('actors', ()):
                 if actor['type'] in 'atlassian-group-role-actor':
-                    permissions[name][PermissionEntry.GROUP].append(actor['name'])
+                    yield name, None, actor['name']
                 elif actor['type'] in 'atlassian-user-role-actor':
-                    permissions[name][PermissionEntry.USER].append(actor['name'])
+                    yield name, actor['name'], None
                 else:
                     self.l.error('Could not match type "{}" to user or group'.format(actor['type']),
                                  extra={'actor': actor})
-        for perm, types in permissions.items():
-            for type, members in types.items():
-                yield PermissionEntry(perm, type, members)
 
     def get_roles(self, projectkey):
         return self.client.get('rest/api/2/project/{}/role'.format(projectkey))
