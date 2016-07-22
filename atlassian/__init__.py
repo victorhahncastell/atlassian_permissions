@@ -101,10 +101,10 @@ class PermissionEntry:
 
         if len(self.users):
             user_strng = 'USERS({})'
-            user_strng = user_strng.format(self.permission, ', '.join(self.users))
+            user_strng = user_strng.format(', '.join(self.users))
         if len(self.groups):
             group_strng = 'GROUPS({})'
-            group_strng = group_strng.format(self.permission, ', '.join(self.groups))
+            group_strng = group_strng.format(', '.join(self.groups))
         if user_strng:
             if group_strng:
                 return prefix + user_strng + ", " + group_strng
@@ -136,14 +136,15 @@ class PermissionCollector:
 
     def get_permissions(self):
         permissions = {}
-        for s in self.services:
+        for s in self.services:                        # Get permissions from all configured services, e.g. Jira...
             s.login(self.user, self.password)
-            for p in s.get_projects():
+
+            for p in s.get_projects():                 # ... for all projects in those services.
                 if s.name not in permissions:
-                    permissions[s.name] = {}
+                    permissions[s.name] = {} # initialize service entry
                 if p.key not in permissions[s.name]:
-                    permissions[s.name][p.key] = p.data
-                permissions[s.name][p.key]['permissions'] = PermissionDict()
+                    permissions[s.name][p.key] = p.data # get project meta data. TODO: normalize
+                    permissions[s.name][p.key]['permissions'] = PermissionDict() # initialize permission entry for this project
                 for permission, users, groups in s.get_permissions(p.key):
                     permissions[s.name][p.key]['permissions'].add_permission(permission, users, groups)
             s.logout()
