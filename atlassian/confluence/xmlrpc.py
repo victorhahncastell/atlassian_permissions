@@ -5,7 +5,7 @@ from xmlrpc.client import Server
 from .. import PermissionEntry, Project
 
 
-__author__ = 'Sýlvan Heuser'
+__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 
@@ -32,7 +32,7 @@ class Confluence:
 
     def get_permissions_for_space(self, key):
         """
-        Not tested.
+        Get permissions from Confluence API
         """
         permissions = self.server.confluence1.getSpacePermissionSets(self.token, key)
         self.l.debug('get_permissions_for_space', extra={'key': key, 'permissions': permissions})
@@ -41,17 +41,26 @@ class Confluence:
 
     def get_permissions(self, key):
         """
-        Not tested.
+        Convert raw data to our internal permission data format
         """
-        permissions = list(self.get_permissions_for_space(key))
-        new_permissions = defaultdict(lambda: defaultdict(lambda: list()))
-        for perm in permissions['contentPermissions']:
-            if perm['userName'] is not None:
-                new_permissions[perm['type']]['users'].append(perm['userName'])
-            if perm['groupName'] is not None:
-                new_permissions[perm['type']]['groups'].append(perm['groupName'])
-        for type, members in new_permissions.items():
-            if 'users' in members:
-                yield PermissionEntry(type, PermissionEntry.USER, members['users'])
-            if 'groups' in members:
-                yield PermissionEntry(type, PermissionEntry.GROUP, members['groups'])
+        for permission_set in self.get_permissions_for_space(key):
+            if 'spacePermissions' in permission_set:
+                for permission in permission_set['spacePermissions']:
+                    if 'type' in permission:
+                        type = permission['type']
+                    else:
+                        pass # TODO error
+
+                    if 'userName' in permission:
+                        user = permission['userName']
+                    else:
+                        user = None
+
+                    if 'groupName' in permission:
+                        group = permission['groupName']
+                    else:
+                        group = None
+
+                    yield permission['type'], user, group
+            else:
+                pass #TODO
