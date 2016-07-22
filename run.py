@@ -14,7 +14,7 @@ from atlassian.jira import Jira
 from atlassian.stash import Stash
 
 
-__author__ = 'Sýlvan Heuser, Victor Hahn'
+__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 

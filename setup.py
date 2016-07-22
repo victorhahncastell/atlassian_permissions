@@ -6,7 +6,7 @@ setup(
     name='Atlassian Permissions',
     version='1.1',
     description='Extract Atlassian permissions',
-    author='Sýlvan Heuser',
+    author='Sýlvan Heuser, Victor Hahn Castell',
     author_email='sylvan.heuser@flexoptix.net',
     packages=find_packages(),
     scripts=['run.py'],
