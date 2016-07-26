@@ -12,6 +12,6 @@ setup(
     scripts=['run.py'],
     install_requires=[
         'requests>=2.5.1',
-        'deepdiff>=1.5.0'
+        'deepdiff>=1.6.0'
     ]
 )

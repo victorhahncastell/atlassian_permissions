@@ -2,120 +2,106 @@
 # -*- coding: utf-8 -*-
 
 import pprint, csv
+from typing import Generator
 
+# TODO: raw permissions / scheme settings for JIRA?!
+# TODO: Confluence protected pages?!
+# TODO: Jira issue visibility?
+# TODO: Stash!!
 
 class PermissionData(dict):
-    """
-    Complete representation of our collected Atlassian service data.
-    See data_structure_example.txt for the general idea of it.
-    """
+    # TODO DEPRECATED
 
-    def export_csv(self, filename, csv_permissions, csv_users, csv_merged):
-        perms = []
-        merged_perms = []
-        permission_names = set()
-        member_names = set()
-        for service, projects in self.items():
-            for project, data in projects.items():
-                project_perms = []
-                for permission in data['permissions']:
-                    prefix_members = set()
-                    permission_names.add(permission.permission)
-                    if permission.type == PermissionEntry.USER:
-                        prefix = 'u'
-                    elif permission.type == PermissionEntry.GROUP:
-                        prefix = 'g'
+    def flatten(self): # TODO -> Generator[str, str, str, str, str]:
+        """
+        A flat representation of this permission entry in first normal form,
+        i.e. a nested list with a consistent depth of 2 containing exactly one user-permission assignment per entry.
 
-                    for member in permission.member_names:
-                        name = '{}:{}'.format(prefix, member)
-                        member_names.add(name)
-                        prefix_members.add(name)
-                    perm = {'service': service, 'project': project, 'permission': permission.permission,
-                            'members': permission.member_names, 'member_type': permission.type,
-                            'prefix_members': list(prefix_members)}
-                    perms.append(perm)
-                    project_perms.append(perm)
-                project_perm = {'service': service, 'project': project}
-                for perm in project_perms:
-                    if perm['permission'] in project_perm:
-                        project_perm[perm['permission']] += perm['prefix_members']
-                    else:
-                        project_perm[perm['permission']] = perm['prefix_members']
-                    for member in perm['prefix_members']:
-                        if member in project_perm:
-                            project_perm[member] += [perm['permission']]
-                        else:
-                            project_perm[member] = [perm['permission']]
-                merged_perms.append(project_perm)
+        Contains permissions sorted alphabetically by product, then project, then permission.
+        Note that "permission" means Role in Case of Jira.
 
+        We use this for CSV export.
+
+        This aggregates the PermissionDict.flatten() results for all permissions in this set.
+
+        Example:
+        [
+            ['Confluence', 'Demospace', 'VIEWSPACE',  'Group', 'confluence-users']
+            ['Jira',       'DEMO',      'Developers', 'User',  'Alice']
+        ]
+        """
+        # each product
+        product_names = sorted(self.keys())
+        for product_name in product_names:
+            product = self[product_name]
+
+            # each project
+            project_names = sorted(product.keys())
+            for project_name in project_names:
+                project = product[project_name]
+
+                # each permission
+                permissions = project["permissions"]
+                for permission, permtype, assignee in permissions.flatten():
+                    yield (product_name, project_name, permission, permtype, assignee)
+
+    def export_csv(self, filename, header=True):
+        # TODO: entities below project?!
         with open(filename, 'w', newline='') as fd:
-            permline = []
             writer = csv.writer(fd, dialect='unix')
-            permline.append('service')
-            permline.append('project')
-            if csv_permissions:
-                for p in permission_names:
-                    permline.append(p)
-            if csv_users:
-                for m in member_names:
-                    permline.append(m)
-            writer.writerow(permline)
-
-            if csv_merged:
-                for permission in merged_perms:
-                    permline = []
-                    permline.append(permission['service'])
-                    permline.append(permission['project'])
-                    if csv_permissions:
-                        for p in permission_names:
-                            if p in permission:
-                                permline.append(';'.join(permission[p]))
-                            else:
-                                permline.append(None)
-                    if csv_users:
-                        for m in member_names:
-                            if m in permission:
-                                permline.append(';'.join(permission[m]))
-                            else:
-                                permline.append(None)
-                    writer.writerow(permline)
-            else:
-                for permission in perms:
-                    permline = []
-                    permline.append(permission['service'])
-                    permline.append(permission['project'])
-                    if csv_permissions:
-                        for p in permission_names:
-                            if permission['permission'] == p:
-                                permline.append(';'.join(permission['prefix_members']))
-                            else:
-                                permline.append(None)
-                    if csv_users:
-                        for m in member_names:
-                            if m in permission['prefix_members']:
-                                permline.append(permission['permission'])
-                            else:
-                                permline.append(None)
-                    writer.writerow(permline)
+            if header:  # first CSV line shall contain column headers
+                writer.writerow(["Product", "Project", "Permission", "Type", "Assignee"])
+            for line in self.flatten():
+                writer.writerow(line)
 
     def export_text(self):
         return pprint.pformat(self)  # TODO: beautify
 
 
 class PermissionDict(dict):
-    def __missing__(self, key):
-        return None
+    """
+    Represents all permissions present that exist on a specific level,
+    e.g. all project-level permissions for a specific Jira project
+    or all page-level permissions for a protected Confluence page.
+    """
 
     def add_permission(self, permission: str, users=[], groups=[]):
         """Same syntax as PermissionEntry constructor. Creates a new permission entry or amends and existing one."""
-        if self[permission]:
+        if permission in self:
             self[permission].additional(users, groups)
         else:
             self[permission] = PermissionEntry(permission, users, groups)
 
+    def flatten(self) -> Generator[str, str, str]:
+        """
+        A flat representation of this permission entry in first normal form,
+        i.e. a nested list with a consistent depth of 2 containing exactly one user-permission assignment per entry.
+
+        Contains permissions sorted alphabetically.
+
+        We use this for CSV export.
+
+        This aggregates the PermissionEntry.flatten() results for all permissions in this set.
+
+        Example:
+        [
+            ['VIEWSPACE', 'Group', 'confluence-users']
+            ['VIEWSPACE', 'User', 'Alice'],
+            ['VIEWSPACE', 'User, 'Bob'],
+        ]
+        """
+        for permission_name in sorted(self.keys()):
+            yield from self[permission_name].flatten()
+
 
 class PermissionEntry:
-    def __init__(self, permission, users = None, groups = None):
+    """
+    Represents a single permission no matter on which level, e.g. browse privileges to a Jira project,
+    or writing privileges to a protected Confluence page.
+    Knows all users and groups who have this specific permission.
+    """
+
+    def __init__(self, permission, users=None, groups=None):
         self.permission = permission
         self.users = set()
         self.groups = set()
@@ -142,7 +128,24 @@ class PermissionEntry:
         else:
             return prefix + "None"
 
-    def additional(self, users = None, groups = None):
+    def flatten(self) -> Generator[str, str, str]:
+        """
+        A flat representation of this permission entry in first normal form,
+        i.e. a sequence of tuples containing exactly one user-permission assignment per entry.
+        Lists groups first, then users; both sorted alphabetically.
+        We use this for CSV export.
+
+        Example:
+        ('VIEWSPACE', 'Group', 'confluence-users'),
+        ('VIEWSPACE', 'User', 'Alice'),
+        ('VIEWSPACE', 'User, 'Bob')
+        """
+        for group in sorted(self.groups):
+            yield (str(self.permission), 'Group', str(group))
+        for user in sorted(self.users):
+            yield (str(self.permission), 'User', str(user))
+
+    def additional(self, users=None, groups=None):
         """Extend this privilege to the specified users and groups"""
         if users:
             if not isinstance(users, set):
@@ -152,5 +155,3 @@ class PermissionEntry:
             if not isinstance(groups, set):
                 groups = {groups}
             self.groups = self.groups | groups
-
-

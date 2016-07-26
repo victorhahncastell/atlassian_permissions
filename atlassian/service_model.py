@@ -6,21 +6,13 @@ from collections import defaultdict
 import logging
 
 
-class MyLittleAtlassianWorld():
-    """
-    - Services
-      - Projects
-    - Permission Data
-      - (a large dict containing collected data, see permission_data.py and data_structure_example.txt for details)
-    YET UNUSED
-    """
-    pass
-
-
 class Service(metaclass=ABCMeta):
     """
     Abstract class for services like Confluence, JIRA, Stash, etc
     """
+
+    # TODO @properties
+    # TODO move permissions stuff here as attributes
 
     def __init__(self, url, version=None, selenium_workaround=False):
         """
@@ -28,13 +20,20 @@ class Service(metaclass=ABCMeta):
         :param version: tuple of version information
         """
         self.l = logging.getLogger('{}.{}'.format(__name__, self.__class__.__name__))
+
         self.url = url
+
+        # TODO why default 0.1.0?
         self.version = version if version is not None else (0, 1, 0)
+
         self.selenium_workaround = selenium_workaround
+
         self.user = None
         self._logged_in = False
         self.server = None
+
         self._data = {}
+        """Raw API data"""
 
     @abstractmethod
     def login(self, user, password):

@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.5
+# -*- coding: utf-8 -*-
+
+import sys
+if sys.version_info < (3, 5):
+    raise RuntimeError("must use python 3.5 or greater")
+
 import csv
 import logging
 from pprint import pprint
@@ -38,13 +44,11 @@ def main():
     services.add_argument('--stash', '-s', help='Add Bitbucket Server instance, formerly known as Stash.', action='append')
 
     action = parser.add_argument_group("Action", "What do you actually want to do?")
-    action.add_argument('--export', '-e',
+    action.add_argument('--csv',
                         help='Export CSV data to this file')
     action.add_argument('--print', action='store_true',
                         help='Pretty-print permissions')
-    action.add_argument('--csv-users', help='For CSV export, include users', action='store_true')
-    action.add_argument('--csv-permissions', help='For CSV export, include permissions', action='store_true')
-    action.add_argument('--csv-merged', help='For CSV export, merge entries together per project', action='store_true')
+    action.add_argument('--csv-header', help='Include a header line in CSV export', action='store_true')
 
     optional = parser.add_argument_group("optional arguments")
     optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
@@ -58,12 +62,12 @@ def main():
     # Parse arguments and provide further validation
     args = parser.parse_args()
 
-    if not (args.print or args.export or args.save):
+    if not (args.print or args.csv or args.save):
       parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
 
     # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
     # TODO: fix this
-    if (args.export and args.compare):
+    if (args.csv and args.compare):
       parser.error("Error: This tool currently can't export comparisons as CSV. Use --print instead.")
 
     # Set log level
@@ -90,8 +94,8 @@ def main():
             previous_permissions = pickle.load(fd)
             permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
 
-    if args.export:
-      permissions.export_csv(args.export, args.csv_permissions, args.csv_users, args.csv_merged)
+    if args.csv:
+      permissions.export_csv(args.csv, args.csv_header)
 
     if args.save:
         with open(args.save, 'wb') as fd:
