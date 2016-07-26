@@ -1,4 +1,4 @@
-{
+{ <PermissionData>
 Jira:
   {
   Project_Key1:
