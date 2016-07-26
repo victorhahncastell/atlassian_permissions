@@ -3,10 +3,10 @@ import logging
 
 from .. import HTTPClient
 
-from atlassian import Service, PermissionEntry, Project
+from ..service_model import Service, Project
+from ..permission_data import PermissionEntry
 
 
-__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 

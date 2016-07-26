@@ -3,10 +3,11 @@ import logging
 from urllib.parse import urlsplit
 from urllib.parse import urljoin
 
-from atlassian import Service, HTTPClient, Project, PermissionEntry
+from ..service_model import Service, Project
+from ..permission_data import PermissionEntry
+from .. import HTTPClient
 
 
-__author__ = 'Sýlvan Heuser'
 l = logging.getLogger(__name__)
 
 

@@ -1,10 +1,9 @@
 import logging
 
-from .. import Service
+from ..service_model import Service
 from .xmlrpc import Confluence as ConfluenceXMLRPC
 
 
-__author__ = 'Sýlvan Heuser'
 l = logging.getLogger(__name__)
 
 

@@ -2,10 +2,10 @@ from collections import defaultdict
 import logging
 from xmlrpc.client import Server
 
-from .. import PermissionEntry, Project
+from ..service_model import Project
 
+#TODO: THIS API IS DEPRECATED
 
-__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 
@@ -22,7 +22,13 @@ class Confluence:
         return self.token
 
     def logout(self):
-        pass  # TODO logout from Confluence via XMLRPC
+        """Return True on sucessfull logout, False otherwise"""
+        if self.token:
+            success = self.server.confluence1.logout(self.token)
+        else:
+            success = False
+        self.token = None
+        return success
 
     def get_spaces(self):
         spaces = self.server.confluence1.getSpaces(self.token)
@@ -60,7 +66,8 @@ class Confluence:
                         group = permission['groupName']
                     else:
                         group = None
-
                     yield permission['type'], user, group
-            else:
-                pass #TODO
+            if set(permission_set.keys()) != {'spacePermissions', 'type'}:
+                self.l.debug('Got Confluence permission data that does not just include "spacePermissions": ' +
+                             str(permission_set))
+

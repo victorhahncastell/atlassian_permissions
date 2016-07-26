@@ -5,16 +5,15 @@ from pprint import pprint
 from argparse import ArgumentParser
 from getpass import getpass
 import pickle
-import sys
 from deepdiff import DeepDiff
 
-from atlassian import PermissionCollector, PermissionEntry
+from atlassian import PermissionCollector
+from atlassian.permission_data import PermissionEntry
 from atlassian.confluence import Confluence
 from atlassian.jira import Jira
 from atlassian.stash import Stash
 
 
-__author__ = 'Sýlvan Heuser, Victor Hahn Castell'
 l = logging.getLogger(__name__)
 
 
@@ -62,9 +61,6 @@ def main():
     if not (args.print or args.export or args.save):
       parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
 
-    if not (args.password or args.passfile or args.load):
-      parser.error("Error: Please use --password or --passfile to specify credentials.")
-
     # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
     # TODO: fix this
     if (args.export and args.compare):
@@ -95,7 +91,7 @@ def main():
             permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
 
     if args.export:
-      export_csv(permissions, args.export, args.csv_permissions, args.csv_users, args.csv_merged)
+      permissions.export_csv(args.export, args.csv_permissions, args.csv_users, args.csv_merged)
 
     if args.save:
         with open(args.save, 'wb') as fd:
@@ -135,93 +131,6 @@ def get_services(confluence, jira, stash, parser, selenium_workaround):
                     uri = ','.join(uri.split(',')[:-1])
                 services.append(service(uri, version=version, selenium_workaround = selenium_workaround))
     return services
-
-
-def export_csv(permissions, filename, csv_permissions, csv_users, csv_merged):
-    perms = []
-    merged_perms = []
-    permission_names = set()
-    member_names = set()
-    for service, projects in permissions.items():
-        for project, data in projects.items():
-            project_perms = []
-            for permission in data['permissions']:
-                prefix_members = set()
-                permission_names.add(permission.permission)
-                if permission.type == PermissionEntry.USER:
-                    prefix = 'u'
-                elif permission.type == PermissionEntry.GROUP:
-                    prefix = 'g'
-
-                for member in permission.member_names:
-                    name = '{}:{}'.format(prefix, member)
-                    member_names.add(name)
-                    prefix_members.add(name)
-                perm = {'service': service, 'project': project, 'permission': permission.permission, 'members': permission.member_names, 'member_type': permission.type, 'prefix_members': list(prefix_members)}
-                perms.append(perm)
-                project_perms.append(perm)
-            project_perm = {'service': service, 'project': project}
-            for perm in project_perms:
-                if perm['permission'] in project_perm:
-                    project_perm[perm['permission']] += perm['prefix_members']
-                else:
-                    project_perm[perm['permission']] = perm['prefix_members']
-                for member in perm['prefix_members']:
-                    if member in project_perm:
-                        project_perm[member] += [perm['permission']]
-                    else:
-                        project_perm[member] = [perm['permission']]
-            merged_perms.append(project_perm)
-
-    with open(filename, 'w', newline='') as fd:
-        permline = []
-        writer = csv.writer(fd, dialect='unix')
-        permline.append('service')
-        permline.append('project')
-        if csv_permissions:
-            for p in permission_names:
-                permline.append(p)
-        if csv_users:
-            for m in member_names:
-                permline.append(m)
-        writer.writerow(permline)
-
-        if csv_merged:
-            for permission in merged_perms:
-                permline = []
-                permline.append(permission['service'])
-                permline.append(permission['project'])
-                if csv_permissions:
-                    for p in permission_names:
-                        if p in permission:
-                            permline.append(';'.join(permission[p]))
-                        else:
-                            permline.append(None)
-                if csv_users:
-                    for m in member_names:
-                        if m in permission:
-                            permline.append(';'.join(permission[m]))
-                        else:
-                            permline.append(None)
-                writer.writerow(permline)
-        else:
-            for permission in perms:
-                permline = []
-                permline.append(permission['service'])
-                permline.append(permission['project'])
-                if csv_permissions:
-                    for p in permission_names:
-                        if permission['permission'] == p:
-                            permline.append(';'.join(permission['prefix_members']))
-                        else:
-                            permline.append(None)
-                if csv_users:
-                    for m in member_names:
-                        if m in permission['prefix_members']:
-                            permline.append(permission['permission'])
-                        else:
-                            permline.append(None)
-                writer.writerow(permline)
 
 
 if __name__ == '__main__':
