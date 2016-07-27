@@ -3,53 +3,56 @@ import logging
 from xmlrpc.client import Server
 
 from ..service_model import Project
+from ..permission_data import PermissionEntry
 
 #TODO: THIS API IS DEPRECATED
 
 l = logging.getLogger(__name__)
 
 
-class Confluence:
-    def __init__(self, uri):
-        self.l = logging.getLogger(__name__ + '.' + self.__class__.__name__)
-        self.uri = uri
-        self.server = Server(uri + '/rpc/xmlrpc')
+class ConfluenceXMLRPC():
+
+    def __init__(self, generic):
+        self.generic = generic
         self.token = None
+        self.server = None
 
     def login(self, user, password):
+        self.server = Server(self.generic.url + '/rpc/xmlrpc')
         self.token = self.server.confluence1.login(user, password)
         assert self.token is not None, 'Login failed'
         return self.token
 
     def logout(self):
-        """Return True on sucessfull logout, False otherwise"""
+        """Return True on sucessful logout, False otherwise"""
         if self.token:
             success = self.server.confluence1.logout(self.token)
         else:
             success = False
         self.token = None
+        self.server = None
         return success
 
-    def get_spaces(self):
+    def load_projects(self):
         spaces = self.server.confluence1.getSpaces(self.token)
-        self.l.debug('get_spaces', extra={'spaces': spaces})
+        l.debug('get_spaces', extra={'spaces': spaces})
         for s in spaces:
-            yield Project(s)
+            yield Project(self.generic, s)
 
     def get_permissions_for_space(self, key):
         """
         Get permissions from Confluence API
         """
         permissions = self.server.confluence1.getSpacePermissionSets(self.token, key)
-        self.l.debug('get_permissions_for_space', extra={'key': key, 'permissions': permissions})
+        l.debug('get_permissions_for_space', extra={'key': key, 'permissions': permissions})
         for p in permissions:
             yield dict(p)
 
-    def get_permissions(self, key):
+    def load_permissions_for_project(self, project_key):
         """
         Convert raw data to our internal permission data format
         """
-        for permission_set in self.get_permissions_for_space(key):
+        for permission_set in self.get_permissions_for_space(project_key):
             if 'spacePermissions' in permission_set:
                 for permission in permission_set['spacePermissions']:
                     if 'type' in permission:
@@ -66,8 +69,8 @@ class Confluence:
                         group = permission['groupName']
                     else:
                         group = None
-                    yield permission['type'], user, group
+                    yield PermissionEntry(permission['type'], user, group)
             if set(permission_set.keys()) != {'spacePermissions', 'type'}:
-                self.l.debug('Got Confluence permission data that does not just include "spacePermissions": ' +
+                l.debug('Got Confluence permission data that does not just include "spacePermissions": ' +
                              str(permission_set))
 

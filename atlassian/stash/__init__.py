@@ -29,32 +29,32 @@ class Stash(Service):
     def logout(self):
         pass  # TODO logout of stash
 
-    def get_projects(self):
+    def load_projects(self):
         yield Project({'key': self.GLOBALKEY, 'description': 'Global Stash permissions'})
         for proj in self._get_pages('/rest/api/1.0/projects'):
             projectkey = proj['key']
-            yield Project(proj)
+            yield Project(self, proj)
             for repo in self._get_pages('/rest/api/1.0/projects/{projectKey}/repos'.format(projectKey=projectkey)):
                 repo['key'] = '{}{}{}'.format(projectkey, self.REPO_DELIM, repo['slug'])
                 del repo['cloneUrl']
                 del repo['links']['clone']
-                yield Project(repo)
+                yield Project(self, repo) # TODO repo!=project
 
-    def get_permissions(self, projectkey):
+    def load_permissions_for_project(self, project_key):
         # permissions = defaultdict(lambda: defaultdict(lambda: list))
         permissions = {}
         # global permissions
-        if projectkey is self.GLOBALKEY:
+        if project_key is self.GLOBALKEY:
             permissions.update(self._get_permissions('/rest/api/1.0/admin/permissions/{}'))
-        elif self.REPO_DELIM in projectkey:
+        elif self.REPO_DELIM in project_key:
             # repo permissions
-            projectkey, repo_slug = projectkey.split(':')
+            project_key, repo_slug = project_key.split(':')
             permissions.update(self._get_permissions(
                 '/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/permissions/{{}}'.format(
-                    projectKey=projectkey, repositorySlug=repo_slug)))
+                    projectKey=project_key, repositorySlug=repo_slug)))
         else:
             # project permissions
-            permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/permissions/{{}}'.format(projectkey)))
+            permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/permissions/{{}}'.format(project_key)))
             # TODO personal repo permissions?
         for permission, permission_types in permissions.items():
             for permission_type, members in permission_types.items():

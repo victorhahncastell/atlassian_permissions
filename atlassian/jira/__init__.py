@@ -24,21 +24,22 @@ class Jira(Service):
         self._data['client'] = HTTPClient(self.url, user=user, password=password)
 
     def logout(self):
-        pass  # TODO logout of jira
+        # TODO logout of jira
+        del self._data['client']
 
-    def get_projects(self):
+    def load_projects(self):
         for project in self.client.get('rest/api/2/project'):
-            yield Project(project)
+            yield Project(self, project)
 
-    def get_permissions(self, projectkey):
-        roles = self.get_roles(projectkey)
+    def load_permissions_for_project(self, project_key):
+        roles = self.get_roles(project_key)
         for name, url in roles.items():
             role = self.client.get(url)
             for actor in role.get('actors', ()):
                 if actor['type'] in 'atlassian-group-role-actor':
-                    yield name, None, actor['name']
+                    yield PermissionEntry(name, None, actor['name'])
                 elif actor['type'] in 'atlassian-user-role-actor':
-                    yield name, actor['name'], None
+                    yield PermissionEntry(name, actor['name'], None)
                 else:
                     self.l.error('Could not match type "{}" to user or group'.format(actor['type']),
                                  extra={'actor': actor})

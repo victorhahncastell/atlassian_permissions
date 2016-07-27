@@ -8,54 +8,6 @@ import pprint, csv
 # TODO: Jira issue visibility?
 # TODO: Stash!!
 
-class PermissionData(dict):
-    # TODO DEPRECATED
-
-    def flatten(self):
-        """
-        A flat representation of this permission entry in first normal form,
-        i.e. a nested list with a consistent depth of 2 containing exactly one user-permission assignment per entry.
-
-        Contains permissions sorted alphabetically by product, then project, then permission.
-        Note that "permission" means Role in Case of Jira.
-
-        We use this for CSV export.
-
-        This aggregates the PermissionDict.flatten() results for all permissions in this set.
-
-        Example:
-        [
-            ['Confluence', 'Demospace', 'VIEWSPACE',  'Group', 'confluence-users']
-            ['Jira',       'DEMO',      'Developers', 'User',  'Alice']
-        ]
-        """
-        # each product
-        product_names = sorted(self.keys())
-        for product_name in product_names:
-            product = self[product_name]
-
-            # each project
-            project_names = sorted(product.keys())
-            for project_name in project_names:
-                project = product[project_name]
-
-                # each permission
-                permissions = project["permissions"]
-                for permission, permtype, assignee in permissions.flatten():
-                    yield (product_name, project_name, permission, permtype, assignee)
-
-    def export_csv(self, filename, header=True):
-        # TODO: entities below project?!
-        with open(filename, 'w', newline='') as fd:
-            writer = csv.writer(fd, dialect='unix')
-            if header:  # first CSV line shall contain column headers
-                writer.writerow(["Product", "Project", "Permission", "Type", "Assignee"])
-            for line in self.flatten():
-                writer.writerow(line)
-
-    def export_text(self):
-        return pprint.pformat(self)  # TODO: beautify
-
 
 class PermissionDict(dict):
     """
@@ -64,12 +16,19 @@ class PermissionDict(dict):
     or all page-level permissions for a protected Confluence page.
     """
 
-    def add_permission(self, permission: str, users=[], groups=[]):
-        """Same syntax as PermissionEntry constructor. Creates a new permission entry or amends and existing one."""
-        if permission in self:
-            self[permission].additional(users, groups)
+    def add_permission(self, permission, users=[], groups=[]):
+        """
+        Can accept a PermissionsEntry object or the raw permission data
+        (in that case, same syntax as PermissionEntry constructor).
+        Adds a new permission entry to this PermissionDict or amends and existing one.
+        """
+        if not isinstance(permission, PermissionEntry):
+            permission = PermissionEntry(permission, users, groups)
+
+        if permission.name in self:
+            self[permission.name].merge(permission)
         else:
-            self[permission] = PermissionEntry(permission, users, groups)
+            self[permission.name] = permission
 
     def flatten(self):
         """
@@ -100,14 +59,16 @@ class PermissionEntry:
     Knows all users and groups who have this specific permission.
     """
 
-    def __init__(self, permission, users=None, groups=None):
-        self.permission = permission
+    def __init__(self, name, users=None, groups=None):
+        self.name = name
+        """The name of this privilege. Note: For Jira, these are roles."""
+
         self.users = set()
         self.groups = set()
         self.additional(users, groups)
 
     def __repr__(self):
-        prefix = self.permission + ": "
+        prefix = self.name + ": "
         user_strng = None
         group_strng = None
 
@@ -123,7 +84,7 @@ class PermissionEntry:
             else:
                 return prefix + user_strng
         elif group_strng:
-            return group_strng
+            return prefix + group_strng
         else:
             return prefix + "None"
 
@@ -140,9 +101,9 @@ class PermissionEntry:
         ('VIEWSPACE', 'User, 'Bob')
         """
         for group in sorted(self.groups):
-            yield (str(self.permission), 'Group', str(group))
+            yield (str(self.name), 'Group', str(group))
         for user in sorted(self.users):
-            yield (str(self.permission), 'User', str(user))
+            yield (str(self.name), 'User', str(user))
 
     def additional(self, users=None, groups=None):
         """Extend this privilege to the specified users and groups"""
@@ -154,3 +115,8 @@ class PermissionEntry:
             if not isinstance(groups, set):
                 groups = {groups}
             self.groups = self.groups | groups
+
+    def merge(self, other_permission_entry):
+        if other_permission_entry.name != self.name:
+            raise ValueError("Can only merge permission entries w/ identical permission name")
+        self.additional(other_permission_entry.users, other_permission_entry.groups)
