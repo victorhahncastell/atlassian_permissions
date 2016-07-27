@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import pprint, csv
-from typing import Generator
 
 # TODO: raw permissions / scheme settings for JIRA?!
 # TODO: Confluence protected pages?!
@@ -12,7 +11,7 @@ from typing import Generator
 class PermissionData(dict):
     # TODO DEPRECATED
 
-    def flatten(self): # TODO -> Generator[str, str, str, str, str]:
+    def flatten(self):
         """
         A flat representation of this permission entry in first normal form,
         i.e. a nested list with a consistent depth of 2 containing exactly one user-permission assignment per entry.
@@ -72,7 +71,7 @@ class PermissionDict(dict):
         else:
             self[permission] = PermissionEntry(permission, users, groups)
 
-    def flatten(self) -> Generator[str, str, str]:
+    def flatten(self):
         """
         A flat representation of this permission entry in first normal form,
         i.e. a nested list with a consistent depth of 2 containing exactly one user-permission assignment per entry.
@@ -128,7 +127,7 @@ class PermissionEntry:
         else:
             return prefix + "None"
 
-    def flatten(self) -> Generator[str, str, str]:
+    def flatten(self):
         """
         A flat representation of this permission entry in first normal form,
         i.e. a sequence of tuples containing exactly one user-permission assignment per entry.

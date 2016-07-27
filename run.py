@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import sys
-if sys.version_info < (3, 5):
-    raise RuntimeError("must use python 3.5 or greater")
+if sys.version_info < (3, 4):
+    raise RuntimeError("must use python 3.4 or greater")
+    # TODO: maybe 3.2 works as well...
 
 import csv
 import logging
