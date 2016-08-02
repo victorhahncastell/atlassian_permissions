@@ -68,7 +68,8 @@ class PermissionEntry:
         self.additional(users, groups)
 
     def __repr__(self):
-        prefix = self.name + ": "
+        #prefix = self.name + ": "
+        prefix = "" # we're really only using this to print who PermissionDicts and this doubles the name. TODO: find better solution
         user_strng = None
         group_strng = None
 

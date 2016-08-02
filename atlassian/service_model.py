@@ -138,7 +138,7 @@ class Service(metaclass=ABCMeta):
         """
         result = dict()
         for project in self.projects:
-            result[project.key] = list(project.permissions.values())
+            result[project.key] = project.permissions
         return result
 
     @property
