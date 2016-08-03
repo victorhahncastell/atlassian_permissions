@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 import logging
 
 from .permission_data import *
@@ -14,6 +13,8 @@ class MyLittleAtlassianWorld():
         """List of all Configured Atlassian services"""
 
     @property
+    # TODO: move to view? We only use this for deepdiff comparison output.
+    # alternatively, move comparison to model
     def permissions(self):
         """
         :return: Permissions from all configured services
@@ -50,17 +51,6 @@ class MyLittleAtlassianWorld():
     def logout(self):
         for service in self.services:
             service.logout()
-
-    def export_csv(self, filename, header=True):
-        with open(filename, 'w', newline='') as fd:
-            writer = csv.writer(fd, dialect='unix')
-            if header:  # first CSV line shall contain column headers
-                writer.writerow(["Product", "Project", "Permission", "Type", "Assignee"])
-            for line in self.flat_permissions:
-                writer.writerow(line)
-
-    def export_text(self):
-        return pprint.pformat(self.permissions)  # TODO: beautify
 
 
 class Service(metaclass=ABCMeta):
