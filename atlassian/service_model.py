@@ -7,6 +7,7 @@ import logging
 
 from .permission_data import *
 
+
 class MyLittleAtlassianWorld():
     def __init__(self, services=[]):
         self.services = services

@@ -2,31 +2,6 @@ import logging
 from urllib.parse import urlsplit, urljoin
 from requests import get
 
-from .permission_data import PermissionDict
-
-
-class PermissionCollector:
-    def __init__(self, services, user, password):
-        self.services = services
-        self.user = user
-        self.password = password
-
-    def get_permissions(self):
-        permissions = PermissionWorld()  # dict w/ custom methods
-        for s in self.services:                        # Get permissions from all configured services, e.g. Jira...
-            s.login(self.user, self.password)
-
-            for p in s.load_projects():                 # ... for all projects in those services.
-                if s.name not in permissions:
-                    permissions[s.name] = {} # initialize service entry
-                if p.key not in permissions[s.name]:
-                    permissions[s.name][p.key] = p.data # get project meta data. TODO: normalize
-                    permissions[s.name][p.key]['permissions'] = PermissionDict() # initialize permission entry for this project
-                for permission, users, groups in s.load_permissions_for_project(p.key):
-                    permissions[s.name][p.key]['permissions'].add_permission(permission, users, groups)
-            s.logout()
-        return permissions
-
 
 class HTTPClient:
     def __init__(self, base, user=None, password=None):
