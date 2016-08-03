@@ -2,7 +2,8 @@ import logging
 from urllib.parse import urlsplit, urljoin
 from requests import get
 
-
+#TODO: move this somewhere sensible
+#TODO: useful error handling (CLI...)
 class HTTPClient:
     def __init__(self, base, user=None, password=None):
         self.base = base
