@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from pprint import pprint
+from pprint import pprint, pformat
 from argparse import ArgumentParser
 from getpass import getpass
 
@@ -16,6 +16,7 @@ from atlassian.stash import Stash
 
 from view.csv import WorldCsvView
 from view.text import WorldTextView
+from view.html import WorldHtmlView
 
 l = logging.getLogger(__name__)
 
@@ -54,22 +55,25 @@ class CliController:
         services.add_argument('--stash', '-s', help='Add Bitbucket Server instance, formerly known as Stash.', action='append')
 
         action = self.parser.add_argument_group("Action", "What do you actually want to do?")
-        action.add_argument('--csv',
-                            help='Export CSV data to this file')
-        action.add_argument('--print', action='store_true',
-                            help='Pretty-print permissions')
-        action.add_argument('--csv-header', help='Include a header line in CSV export', action='store_true')
+        action.add_argument('--csv', action='store_true', help='Export permissions as CSV')
+        action.add_argument('--print', action='store_true', help='Pretty-Print permissions (plain text)')
+        action.add_argument('--html', action='store_true', help='Export permissions as HTML')
 
         optional = self.parser.add_argument_group("optional arguments")
+        optional.add_argument('--compare', '-cmp',
+                              help="Compare to previous state, show changes only." +
+                                   "Will compare to a file previously saved with --save." +
+                                   "Provide this file's name here.")
         optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
         optional.add_argument('--load', '-L', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
+        optional.add_argument('--output', '-o', help='Write output to this file. Will print to console if omitted.')
         optional.add_argument('--loglevel', '-l', default='WARNING', help="Loglevel", action='store')
-        optional.add_argument('--compare', '-cmp', help="Compare to previous state, show changes only. Will compare to a file previously saved with --save. Provide this file's name here.")
+        optional.add_argument('--header', help='For CSV export, include a header line', action='store_true')
 
     def parse_arguments(self):
         self.args = self.parser.parse_args()
 
-        if not (self.args.print or self.args.csv or self.args.save):
+        if not (self.args.print or self.args.csv or self.args.save or self.args.html):
             self.parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
 
         # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
@@ -80,7 +84,7 @@ class CliController:
         # Set log level
         loglevel = getattr(logging, self.args.loglevel.upper(), None)
         if not isinstance(loglevel, int):
-            raise ValueError('Invalid log level: {}'.format(args.loglevel))
+            raise ValueError('Invalid log level: {}'.format(self.args.loglevel))
         logging.basicConfig(level=loglevel)
 
         # Create model
@@ -94,31 +98,44 @@ class CliController:
                 service.login(self.args.user, password)
 
     def run_action(self):
-        permissions = self.world.permissions  # TODO: get rid of this
-
-        if self.args.compare:
-            with open(self.args.compare, 'rb') as fd:
-                current_permissions = permissions
-                previous_permissions = pickle.load(fd).permissions
+        if self.args.compare:  # special case, we prevented any other output than plain text in parse_arguments()
+            with open(self.args.compare, 'rb') as pickle_file:
+                current_permissions = self.world.permissions
+                previous_permissions = pickle.load(pickle_file).permissions
                 permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
 
-                if self.args.print:
+                if self.args.output:
+                    with open(self.args.output, 'w') as out_file:
+                        out_file.write(pformat(permissions))
+                else:
                     pprint(permissions)
-                return
-                # TODO: beautify (output as well as code)
 
+        # TODO: beautify this block similar to what we did in create_services()
         if self.args.csv:
             view = WorldCsvView(self.world)
-            view.export_csv(self.args.csv, self.args.csv_header)
-
-        if self.args.save:
-            with open(self.args.save, 'wb') as fd:
-                self.world.logout()
-                pickle.dump(self.world, fd)
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
 
         if self.args.print:
             view = WorldTextView(self.world)
-            view.print()
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
+
+        if self.args.html:
+            view = WorldHtmlView(self.world)
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
+
+        if self.args.save:  # Save model as pickle. Independent of any other action.
+            with open(self.args.save, 'wb') as fd:
+                self.world.logout()
+                pickle.dump(self.world, fd)
 
     def get_password(self):
         password = None

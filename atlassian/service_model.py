@@ -88,6 +88,10 @@ class Service(metaclass=ABCMeta):
         self._data = {}
         """Raw API data"""
 
+    def assert_logged_in(self):
+        if not self._logged_in:
+            raise RuntimeError("must be logged in")
+
     @abstractmethod
     def login(self, user, password):
         """
@@ -105,6 +109,7 @@ class Service(metaclass=ABCMeta):
         return self._projects
 
     def refresh_projects(self):
+        self.assert_logged_in()
         self._projects = list(self.load_projects())
 
     @abstractmethod
@@ -159,6 +164,7 @@ class Service(metaclass=ABCMeta):
         Afterwards, accessing the permissions property should get you up to date information.
         :rtype: None
         """
+        self.assert_logged_in()
         for project in self.projects:
             project.refresh_permissions()
 

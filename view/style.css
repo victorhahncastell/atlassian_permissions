@@ -1,0 +1,15 @@
+.service-container {
+    display: inline-block;
+    margin: 20px;
+    vertical-align: top;
+}
+
+.service-table {
+    width: auto;
+}
+
+ul {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}

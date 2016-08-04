@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from pprint import pprint
+from pprint import pformat
+
+from . import TextView
 
 
-class WorldTextView():
+class WorldTextView(TextView):
     def __init__(self, my_little_atlassian_world):
-        self.model = my_little_atlassian_world
+        super().__init__(my_little_atlassian_world)
 
-    def print(self):
-        pprint(self.model.permissions)
+    def generate(self):
+        self._output = pformat(self.model.permissions)
