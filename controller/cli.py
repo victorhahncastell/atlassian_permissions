@@ -74,7 +74,10 @@ class CliController:
         self.args = self.parser.parse_args()
 
         if not (self.args.print or self.args.csv or self.args.save or self.args.html):
-            self.parser.error("Error: Please specify at least one action. You do want this script to actually do something, right?")
+            self.parser.error("Please specify at least one action. You do want this script to actually do something, right?")
+
+        if not (self.args.load or self.args.user):
+            self.parser.error("Please specify a user name.")
 
         # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
         # TODO: fix this
@@ -94,8 +97,9 @@ class CliController:
         else:
             password = self.get_password()
             self.world = self.create_services(self.args.confluence, self.args.jira, self.args.stash)
-            for service in self.world.services:  # TODO beautify
+            for service in self.world.services.values():  # TODO beautify
                 service.login(self.args.user, password)
+            self.world.refresh()
 
     def run_action(self):
         if self.args.compare:  # special case, we prevented any other output than plain text in parse_arguments()
@@ -104,7 +108,6 @@ class CliController:
                 previous_world = pickle.load(pickle_file)
                 previous_permissions = previous_world.permissions
                 permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
-                test = DeepDiff(previous_world, self.world)
                 if self.args.output:
                     with open(self.args.output, 'w') as out_file:
                         out_file.write(pformat(permissions))
@@ -158,7 +161,7 @@ class CliController:
         :rtype MyLittleAtlassianWorld
         :return An object representing an ecosystem of Atlassian services
         """
-        services = []
+        services = dict()
         for arguments, service, name in ((confluence, Confluence, "Confluence"), (jira, Jira, "Jira"), (stash, Stash, "Stash")):
             # TODO: support custom names
             if arguments is not None:
@@ -173,6 +176,6 @@ class CliController:
                         versionstr = uri.split(',')[-1]
                         version = tuple(versionstr.split('=')[-1].split('.'))
                         uri = ','.join(uri.split(',')[:-1])
-                    services.append(service(uri, name=name, version=version))
+                    services[service.name] = service(uri, name=name, version=version)
         world = MyLittleAtlassianWorld(services)
         return world

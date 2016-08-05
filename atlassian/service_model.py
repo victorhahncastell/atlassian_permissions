@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABCMeta, abstractmethod
+from deepdiff import DeepDiff
 import logging
 
 from .permission_data import *
 
 
 class MyLittleAtlassianWorld():
-    def __init__(self, services=[]):
+    def __init__(self, services=dict()):
         self.services = services
         """List of all Configured Atlassian services"""
 
@@ -21,9 +22,13 @@ class MyLittleAtlassianWorld():
         :rtype: dict
         """
         result = dict()
-        for service in self.services:
+        for service in self.services.values():
             result[service.name] = service.permissions
         return result
+
+    def refresh(self):
+        for service in self.services.values():
+            service.refresh_permissions()
 
     @property
     def flat_permissions(self):
@@ -44,13 +49,28 @@ class MyLittleAtlassianWorld():
         ['Jira',       'DEMO',      'Developers', 'User',  'Alice']
         """
         # TODO: entities below project?!
-        for service in self.services:
+        for service in self.services.values():
             for space, permission_name, type, assignee in service.flat_permissions:
                 yield service.name, space, permission_name, type, assignee
 
     def logout(self):
-        for service in self.services:
+        for service in self.services.values():
             service.logout()
+
+    def _exclude_for_diff(self):
+        for service_name, service in self.services.items():
+            for item in service.exclude_for_diff():
+                yield ".services['" + service_name + "']" + item
+
+    def diff(self, other):
+        """
+        Use deepdiff to create a dict of differences between myself and another MyLittleAtlassianWorld object.
+        :rtype: DeepDiff
+        """
+        exclude = []
+        for item in self._exclude_for_diff():
+            exclude.append("root" + item)
+        return DeepDiff(self, other, exclude_paths=exclude)
 
 
 class Service(metaclass=ABCMeta):
@@ -83,7 +103,10 @@ class Service(metaclass=ABCMeta):
         self.server = None
 
         self._projects = None
-        """Cached list of projects so we don't need to get them via network every single time"""
+        """Cached dict of projects so we don't need to get them via network every single time"""
+
+        self._api = None
+        """Pluggable API object, if applicable."""
 
         self._data = {}
         """Raw API data"""
@@ -104,13 +127,16 @@ class Service(metaclass=ABCMeta):
 
     @property
     def projects(self):
+        """dict of all projects in this service"""
         if not self._projects:
             self.refresh_projects()
         return self._projects
 
     def refresh_projects(self):
         self.assert_logged_in()
-        self._projects = list(self.load_projects())
+        self._projects = dict()
+        for project in self.load_projects():
+            self._projects[project.key] = project
 
     @abstractmethod
     def load_projects(self):
@@ -133,7 +159,7 @@ class Service(metaclass=ABCMeta):
         :rtype: dict
         """
         result = dict()
-        for project in self.projects:
+        for project in self.projects.values():
             result[project.key] = project.permissions
         return result
 
@@ -154,7 +180,7 @@ class Service(metaclass=ABCMeta):
         Example:
         ['DEMO', 'Developers', 'User',  'Alice']
         """
-        for project in self.projects:
+        for project in self.projects.values():
             for permission_name, type, assignee in project.permissions.flatten():
                 yield project.key, permission_name, type, assignee
 
@@ -165,7 +191,7 @@ class Service(metaclass=ABCMeta):
         :rtype: None
         """
         self.assert_logged_in()
-        for project in self.projects:
+        for project in self.projects.values():
             project.refresh_permissions()
 
 
@@ -189,6 +215,12 @@ class Service(metaclass=ABCMeta):
         Will terminate the current session. Is automatically called on destruction of this object.
         """
         pass
+
+    def exclude_for_diff(self):
+        """
+        :return: A list of member that should not be considered for
+        """
+        return [".l", "._api", "._data"]  # TODO: validate names (ensure there's some kind of sensible error if someone changes those but doesn't change them here)
 
     def __del__(self):
         #self.logout()
