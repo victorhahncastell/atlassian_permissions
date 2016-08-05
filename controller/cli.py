@@ -136,27 +136,17 @@ class CliController:
         Runs an action listing current permissions. Triggers a view based on user commands
         (e.g. --html for an HTML or --print for a plain text view).
         """
-        # TODO: beautify this block similar to what we did in create_services()
-        if self.args.csv:
-            view = WorldCsvView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
-
-        if self.args.print:
-            view = WorldTextView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
-
-        if self.args.html:
-            view = WorldHtmlView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
+        view_map = (
+            (self.args.csv, WorldCsvView),
+            (self.args.print, WorldTextView),
+            (self.args.html, WorldHtmlView))
+        for arg, view_class in view_map:
+            if arg:
+                view = view_class(self.world)
+                if self.args.output:
+                    view.export(self.args.output)
+                else:
+                    view.print()
 
     def run_save(self):
         """
