@@ -103,6 +103,19 @@ class CliController:
 
     def run_action(self):
         if self.args.compare:  # special case, we prevented any other output than plain text in parse_arguments()
+            self.run_compare()
+        else:
+            self.run_listperms()
+
+        if self.args.save:  # Save model as pickle. Independent of any other action.
+            self.run_save()
+
+    def run_compare(self):
+        """
+        Runs a compare action. Triggers a view based on user commands
+        (e.g. --html for an HTML or --print for a plain text view).
+        """
+        if self.args.print:
             with open(self.args.compare, 'rb') as pickle_file:
                 current_permissions = self.world.permissions
                 previous_world = pickle.load(pickle_file)
@@ -113,34 +126,45 @@ class CliController:
                         out_file.write(pformat(permissions))
                 else:
                     pprint(permissions)
+                # TODO: use model-level diff, remove view implementation from this controller
         else:
+            pass
+            # TODO implement, then remove validation in parse_arguments()
 
-            # TODO: beautify this block similar to what we did in create_services()
-            if self.args.csv:
-                view = WorldCsvView(self.world)
-                if self.args.output:
-                    view.export(self.args.output)
-                else:
-                    view.print()
+    def run_listperms(self):
+        """
+        Runs an action listing current permissions. Triggers a view based on user commands
+        (e.g. --html for an HTML or --print for a plain text view).
+        """
+        # TODO: beautify this block similar to what we did in create_services()
+        if self.args.csv:
+            view = WorldCsvView(self.world)
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
 
-            if self.args.print:
-                view = WorldTextView(self.world)
-                if self.args.output:
-                    view.export(self.args.output)
-                else:
-                    view.print()
+        if self.args.print:
+            view = WorldTextView(self.world)
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
 
-            if self.args.html:
-                view = WorldHtmlView(self.world)
-                if self.args.output:
-                    view.export(self.args.output)
-                else:
-                    view.print()
+        if self.args.html:
+            view = WorldHtmlView(self.world)
+            if self.args.output:
+                view.export(self.args.output)
+            else:
+                view.print()
 
-        if self.args.save:  # Save model as pickle. Independent of any other action.
-            with open(self.args.save, 'wb') as fd:
-                self.world.logout()
-                pickle.dump(self.world, fd)
+    def run_save(self):
+        """
+        Saves current state to a pickle file.
+        """
+        with open(self.args.save, 'wb') as fd:
+            self.world.logout()
+            pickle.dump(self.world, fd)
 
     def get_password(self):
         password = None
