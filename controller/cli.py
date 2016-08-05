@@ -78,8 +78,8 @@ class CliController:
 
         # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
         # TODO: fix this
-        if self.args.csv and self.args.compare:
-            self.parser.error("Error: This tool currently can't export comparisons as CSV. Use --print instead.")
+        if self.args.compare and (self.args.csv or self.args.html):
+            self.parser.error("Error: This tool currently can't export comparisons as CSV or HTML. Use --print instead.")
 
         # Set log level
         loglevel = getattr(logging, self.args.loglevel.upper(), None)
@@ -101,36 +101,38 @@ class CliController:
         if self.args.compare:  # special case, we prevented any other output than plain text in parse_arguments()
             with open(self.args.compare, 'rb') as pickle_file:
                 current_permissions = self.world.permissions
-                previous_permissions = pickle.load(pickle_file).permissions
+                previous_world = pickle.load(pickle_file)
+                previous_permissions = previous_world.permissions
                 permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
-
+                test = DeepDiff(previous_world, self.world)
                 if self.args.output:
                     with open(self.args.output, 'w') as out_file:
                         out_file.write(pformat(permissions))
                 else:
                     pprint(permissions)
+        else:
 
-        # TODO: beautify this block similar to what we did in create_services()
-        if self.args.csv:
-            view = WorldCsvView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
+            # TODO: beautify this block similar to what we did in create_services()
+            if self.args.csv:
+                view = WorldCsvView(self.world)
+                if self.args.output:
+                    view.export(self.args.output)
+                else:
+                    view.print()
 
-        if self.args.print:
-            view = WorldTextView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
+            if self.args.print:
+                view = WorldTextView(self.world)
+                if self.args.output:
+                    view.export(self.args.output)
+                else:
+                    view.print()
 
-        if self.args.html:
-            view = WorldHtmlView(self.world)
-            if self.args.output:
-                view.export(self.args.output)
-            else:
-                view.print()
+            if self.args.html:
+                view = WorldHtmlView(self.world)
+                if self.args.output:
+                    view.export(self.args.output)
+                else:
+                    view.print()
 
         if self.args.save:  # Save model as pickle. Independent of any other action.
             with open(self.args.save, 'wb') as fd:
