@@ -14,6 +14,17 @@ class MyLittleAtlassianWorld():
         self.services = services
         """List of all Configured Atlassian services"""
 
+    def __str__(self):
+        result = ""
+        first = True
+        for service_key in sorted(self.services.keys()):
+            if first:
+                first = False
+            else:
+                result += "\n\n"
+            result += str(self.services[service_key])
+        return result
+
     @property
     def permissions(self):
         """
@@ -109,6 +120,14 @@ class Service(metaclass=ABCMeta):
 
         self._data = {}
         """Raw API data"""
+
+    def __str__(self):
+        result = self.name
+        result += ":\n"
+        result += ("-" * (len(self.name)+1) ) + "\n"
+        for project_key in sorted(self.projects.keys()):
+            result += str(self.projects[project_key]) + "\n"
+        return result
 
     def assert_logged_in(self):
         if not self._logged_in:
@@ -240,6 +259,13 @@ class Project:
         """
         A PermissionDict() mapping permission names to permission objects.
         """
+
+    def __str__(self):
+        result = self.key + ": "
+        prefixlen = len(result)
+        perms = str(self.permissions)
+        result += str(perms).replace("\n", "\n" + " " * prefixlen)
+        return result
 
     @property
     def key(self):

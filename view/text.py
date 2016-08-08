@@ -11,4 +11,4 @@ class WorldTextView(TextView):
         super().__init__(my_little_atlassian_world)
 
     def generate(self):
-        self._output = pformat(self.model.permissions)
+        self._output = str(self.model)

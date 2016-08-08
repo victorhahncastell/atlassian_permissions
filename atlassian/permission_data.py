@@ -14,6 +14,17 @@ class PermissionDict(dict):
     or all page-level permissions for a protected Confluence page.
     """
 
+    def __str__(self):
+        result = ""
+        first = True
+        for permission_key in sorted(self.keys()):
+            if first:
+                first = False
+            else:
+                result += "\n"
+            result += str(self[permission_key])
+        return result
+
     def add_permission(self, permission, users=[], groups=[]):
         """
         Can accept a PermissionsEntry object or the raw permission data
@@ -65,9 +76,9 @@ class PermissionEntry:
         self.groups = set()
         self.additional(users, groups)
 
-    def __repr__(self):
-        #prefix = self.name + ": "
-        prefix = "" # we're really only using this to print who PermissionDicts and this doubles the name. TODO: find better solution
+    def __str__(self):
+        prefix = self.name + ": "
+        #prefix = "" # we're really only using this to print who PermissionDicts and this doubles the name. TODO: find better solution
         user_strng = None
         group_strng = None
 
