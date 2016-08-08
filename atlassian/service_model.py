@@ -59,9 +59,9 @@ class MyLittleAtlassianWorld():
         ['Jira',       'DEMO',      'Developers', 'User',  'Alice']
         """
         # TODO: entities below project?!
-        for service in self.services.values():
-            for space, permission_name, type, assignee in service.flat_permissions:
-                yield service.name, space, permission_name, type, assignee
+        for service_key in sorted(self.services.keys()):
+            for space, permission_name, type, assignee in self.services[service_key].flat_permissions:
+                yield self.services[service_key].name, space, permission_name, type, assignee
 
     def logout(self):
         for service in self.services.values():
@@ -198,9 +198,9 @@ class Service(metaclass=ABCMeta):
         Example:
         ['DEMO', 'Developers', 'User',  'Alice']
         """
-        for project in self.projects.values():
-            for permission_name, type, assignee in project.permissions.flatten():
-                yield project.key, permission_name, type, assignee
+        for project_key in sorted(self.projects.keys()):
+            for permission_name, type, assignee in self.projects[project_key].permissions.flatten():
+                yield project_key, permission_name, type, assignee
 
     def refresh_permissions(self):
         """
