@@ -16,9 +16,9 @@
     <body style="text-align: center">
         <h1 class="w3-xxxlarge w3-animate-bottom">Atlassian permissions</h1>
 
-        %% for service in world.services.values()
+        %% for service_key, project_dict in data.items()
         <div class="w3-responsive w3-card-4 service-container" style="display: inline-block; margin: 20px; vertical-align: top;"> <!-- TODO -->
-        <h2 class="w3-xlarge">{{ service.name }}</h2>
+        <h2 class="w3-xlarge">{{ service_key }}</h2>
             <table class="w3-table w3-striped w3-white" style="width: auto"> <!-- TODO -->
                 <thead>
                     <tr class="w3-theme">
@@ -29,10 +29,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    %% for project in service.projects.values()
-                    %% for permission in project.permissions.values()
+                    %% for project_key, permission_dict in project_dict.items()
+                    %% for permission in permission_dict.values()
                     <tr>
-                        <td>{{project.key}}</td>
+                        <td>{{project_key}}</td>
                         <td>{{permission.name}}</td>
                         <td>
                             <ul class="w3-ul w3-margin-bottom">

@@ -36,4 +36,10 @@ class WorldHtmlView(TextView):
         self.template = self.environment.get_template(self.template_filename)
 
     def generate(self):
-        self._output = self.template.render(world=self.model)
+        data = self.model.permissions
+        for service_key, project_dict in data.items():
+            for project_key, permission_dict in project_dict.items():
+                for permission in permission_dict.values():
+                    pass
+
+        self._output = self.template.render(data=data)
