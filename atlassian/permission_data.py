@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pprint, csv
-
 # TODO: raw permissions / scheme settings for JIRA?!
 # TODO: Confluence protected pages?!
 # TODO: Jira issue visibility?

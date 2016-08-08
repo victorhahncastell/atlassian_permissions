@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABCMeta, abstractmethod
-from deepdiff import DeepDiff
+from collections import OrderedDict
 import logging
+from deepdiff import DeepDiff
 
 from .permission_data import *
 
@@ -14,16 +15,14 @@ class MyLittleAtlassianWorld():
         """List of all Configured Atlassian services"""
 
     @property
-    # TODO: move to view? We only use this for deepdiff comparison output.
-    # alternatively, move comparison to model
     def permissions(self):
         """
-        :return: Permissions from all configured services
-        :rtype: dict
+        :return: Permissions from all configured services. Ordered alphabetically.
+        :rtype: OrderedDict
         """
-        result = dict()
-        for service in self.services.values():
-            result[service.name] = service.permissions
+        result = OrderedDict()
+        for service_key in sorted(self.services.keys()):
+            result[service_key] = self.services[service_key].permissions
         return result
 
     def refresh(self):
@@ -150,17 +149,17 @@ class Service(metaclass=ABCMeta):
     @property
     def permissions(self):
         """
-        :return A dict of all permissions for this service.
+        :return A dict of all permissions for this service. Ordered alpahbetically.
                 Example:
                 {
                     'KEY1': [permission1 <PermissionEntry>, permission2 <PermissionEntry>],
                     'KEY2': [permission1 <PermissionEntry>, permission2 <PermissionEntry>]
                 }
-        :rtype: dict
+        :rtype: OrderedDict
         """
-        result = dict()
-        for project in self.projects.values():
-            result[project.key] = project.permissions
+        result = OrderedDict()
+        for project_key in sorted(self.projects.keys()):
+            result[project_key] = self.projects[project_key].permission_data()
         return result
 
     @property
@@ -250,11 +249,17 @@ class Project:
     def permissions(self):
         """
         :return: A dictionary of all permissions for this project
-        :rtype: dict
+        :rtype: PermissionDict
         """
         if not self._permissions:
             self.refresh_permissions()
         return self._permissions
+
+    def permission_data(self):
+        """
+        :return: An alphabetically ordered dictionary of permission entries. Note this is not a PermissionDict anymore.
+        """
+        return OrderedDict(sorted(self.permissions.items(), key=lambda t: t[0]))
 
     def refresh_permissions(self):
         """
