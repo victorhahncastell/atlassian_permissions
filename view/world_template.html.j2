@@ -22,7 +22,7 @@
             <table class="w3-table w3-striped w3-white" style="width: auto"> <!-- TODO -->
                 <thead>
                     <tr class="w3-theme">
-                        <th>Project</th>
+                        <th>Project</th> <!-- TODO -->
                         <th>Permission</th>
                         <th>Users</th>
                         <th>Groups</th>
@@ -30,11 +30,14 @@
                 </thead>
                 <tbody>
                     %% for project_key, permission_dict in project_dict.items()
+                    %% set outerindex = loop.index
                     %% for permission in permission_dict.values()
                     <tr>
-                        <td>{{project_key}}</td>
-                        <td>{{permission.name}}</td>
-                        <td>
+                        %% if loop.index==1
+                        <td rowspan="{{permission_dict|length}}" class="projectcol" style="background-color: #d1d1d1; {% if loop.index==1 and outerindex != 1 %}border-top:1px solid #eee;{% endif %}">{{project_key}}</td> <!-- TODO -->
+                        %% endif
+                        <td {% if loop.index==1 and outerindex != 1 %}style="border-top:1px solid #aaa;"{% endif %}>{{permission.name}}</td>
+                        <td {% if loop.index==1 and outerindex != 1 %}style="border-top:1px solid #aaa;"{% endif %}>
                             <ul class="w3-ul w3-margin-bottom">
                                 %% for user in permission.users
                                 <li>
@@ -43,7 +46,7 @@
                                 %% endfor
                             </ul>
                         </td>
-                        <td>
+                        <td {% if loop.index==1 and outerindex != 1 %}style="border-top:1px solid #aaa;"{% endif %}>
                             <ul class="w3-ul w3-margin-bottom">
                                 %% for group in permission.groups
                                 <li>
