@@ -9,6 +9,7 @@ l = logging.getLogger(__name__)
 
 class Confluence(Service):
     # TODO: get version from API
+    # TODO: include option to exclude private spaces (and do that by default?)
     name = 'Confluence'
     space_permissions_supported_from = (5, 5) #TODO
 
