@@ -2,13 +2,12 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css">
         <style type="text/css">
+            %% include "style.css"
+
             %% include "w3.css"
 
             %% include "w3-theme-black.css"
-
-            %% include "style.css"
 
         </style>
         <title>Atlassian permissions</title>
@@ -17,9 +16,9 @@
         <h1 class="w3-xxxlarge w3-animate-bottom">Atlassian permissions</h1>
 
         %% for service_key, project_dict in data.items()
-        <div class="w3-responsive w3-card-4 service-container" style="display: inline-block; margin: 20px; vertical-align: top;"> <!-- TODO -->
+        <div class="w3-responsive w3-card-4 service-container">
         <h2 class="w3-xlarge">{{ service_key }}</h2>
-            <table class="w3-table w3-striped w3-white" style="width: auto"> <!-- TODO -->
+            <table class="w3-table w3-striped w3-white service-table">
                 <thead>
                     <tr class="w3-theme">
                         <th>Project</th> <!-- TODO -->
@@ -34,7 +33,7 @@
                     %% for permission in permission_dict.values()
                     <tr>
                         %% if loop.index==1
-                        <td rowspan="{{permission_dict|length}}" class="projectcol" style="background-color: #d1d1d1; {% if loop.index==1 and outerindex != 1 %}border-top:1px solid #eee;{% endif %}">{{project_key}}</td> <!-- TODO -->
+                        <td rowspan="{{permission_dict|length}}" class="projectcol" style="{% if loop.index==1 and outerindex != 1 %}border-top:1px solid #eee;{% endif %}">{{project_key}}</td> <!-- TODO -->
                         %% endif
                         <td {% if loop.index==1 and outerindex != 1 %}style="border-top:1px solid #aaa;"{% endif %}>{{permission.name}}</td>
                         <td {% if loop.index==1 and outerindex != 1 %}style="border-top:1px solid #aaa;"{% endif %}>

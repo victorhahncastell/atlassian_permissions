@@ -17,3 +17,8 @@ ul {
 .projectcol {
     background-color: #d1d1d1;
 }
+
+del {
+    color: red;
+    font-weight: bold;
+}
