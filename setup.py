@@ -12,7 +12,7 @@ setup(
     scripts=['run.py'],
     install_requires=[
         'requests>=2.5.1',
-        'deepdiff>=1.8.0',
+        'deepdiff>=2.1.2',
         'dill',
         'Jinja2'
     ]

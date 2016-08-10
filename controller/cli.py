@@ -64,6 +64,7 @@ class CliController:
                               help="Compare to previous state, show changes only." +
                                    "Will compare to a file previously saved with --save." +
                                    "Provide this file's name here.")
+        optional.add_argument('--diff', action='store_true', help="Use together with cmp and an output action to show changes only.")
         optional.add_argument('--save', '-S', help='Save to internal file. This allows you to do further analysis with this script without re-crawling everything.')
         optional.add_argument('--load', '-L', help='Load from file. This allows you to do further analysis with this script without re-crawling everything.')
         optional.add_argument('--output', '-o', help='Write output to this file. Will print to console if omitted.')
@@ -115,6 +116,11 @@ class CliController:
         Runs a compare action. Triggers a view based on user commands
         (e.g. --html for an HTML or --print for a plain text view).
         """
+        if self.args.diff:
+            diff = 'only'
+        else:
+            diff = 'yes'
+
         if self.args.print:
             with open(self.args.compare, 'rb') as pickle_file:
                 current_permissions = self.world.permissions
@@ -140,7 +146,7 @@ class CliController:
                     (self.args.html, WorldHtmlView))
                 for arg, view_class in view_map:
                     if arg:
-                        view = view_class(self.world, cmp=previous_world, diff="yes")
+                        view = view_class(self.world, cmp=previous_world, diff=diff)
                         if self.args.output:
                             view.export(self.args.output)
                         else:

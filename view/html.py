@@ -3,7 +3,7 @@
 
 import os
 import jinja2
-from deepdiff import DeepDiff
+from deepdiff import DeepDiff, DeepSearch
 
 from . import TextView
 
@@ -55,6 +55,23 @@ class WorldHtmlView(TextView):
                 self.add_rem_parse(permdata, metadata, 'set_item_removed', item)
             for item in diff['set_item_added']:
                 self.add_rem_parse(permdata, metadata, 'set_item_added', item)
+
+        # TODO: really ugly hack! need to do this upfront, which is only feasible if we get deepdiff to provide us with references directly
+        remove = list()
+        if self.diff == "only":
+            metadata['title'] = 'Atlassian permission changes'
+            for service_key, projects in permdata.items():
+                if DeepSearch(projects, "<ins>") == {} and DeepSearch(projects, "<del>" == {}):  # discard service
+                    remove.append( (permdata, service_key) )
+                else:
+                    for project_key, permissions in projects.items():
+                        if (DeepSearch(permissions, "<ins>") == {}
+                            and DeepSearch(permissions, "<del>") == {}):  # discard project
+                                remove.append( (projects, project_key) )
+            for remove_from, item in remove:
+                del remove_from[item]
+        else:
+            metadata['title'] = 'Atlassian permissions'
 
         self._output = self.template.render(permdata=permdata, metadata=metadata)
 
