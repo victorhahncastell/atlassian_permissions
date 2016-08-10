@@ -30,43 +30,40 @@ class Stash(Service):
         pass  # TODO logout of stash
 
     def load_projects(self):
-        yield Project({'key': self.GLOBALKEY, 'description': 'Global Stash permissions'})
+        yield Project(self, {'key': self.GLOBALKEY, 'description': 'Global Stash permissions'})
         for proj in self._get_pages('/rest/api/1.0/projects'):
             projectkey = proj['key']
             yield Project(self, proj)
             for repo in self._get_pages('/rest/api/1.0/projects/{projectKey}/repos'.format(projectKey=projectkey)):
                 repo['key'] = '{}{}{}'.format(projectkey, self.REPO_DELIM, repo['slug'])
-                del repo['cloneUrl']
-                del repo['links']['clone']
+                #del repo['cloneUrl']  # TODO: why did these two lines exist?
+                #del repo['links']['clone']
                 yield Project(self, repo) # TODO repo!=project
 
     def load_permissions_for_project(self, project_key):
-        # permissions = defaultdict(lambda: defaultdict(lambda: list))
-        permissions = {}
         # global permissions
         if project_key is self.GLOBALKEY:
-            permissions.update(self._get_permissions('/rest/api/1.0/admin/permissions/{}'))
+            result = self._get_permissions('/rest/api/1.0/admin/permissions/{}')
+            return result
         elif self.REPO_DELIM in project_key:
             # repo permissions
             project_key, repo_slug = project_key.split(':')
-            permissions.update(self._get_permissions(
-                '/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/permissions/{{}}'.format(
-                    projectKey=project_key, repositorySlug=repo_slug)))
+            result = self._get_permissions('/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/permissions/{{}}'.format(projectKey=project_key, repositorySlug=repo_slug))
+            return result
         else:
             # project permissions
-            permissions.update(self._get_permissions('/rest/api/1.0/projects/{}/permissions/{{}}'.format(project_key)))
+            result = self._get_permissions('/rest/api/1.0/projects/{}/permissions/{{}}'.format(project_key))
+            return result
             # TODO personal repo permissions?
-        for permission, permission_types in permissions.items():
-            for permission_type, members in permission_types.items():
-                yield PermissionEntry(permission, permission_type, members)
 
     def _get_permissions(self, api):
-        permissions = defaultdict(lambda: defaultdict(list))
-        for api_endpoint, response_key, permission_type in (('groups', 'group', PermissionEntry.GROUP),
-                                                            ('users', 'user', PermissionEntry.USER)):
+        for api_endpoint, response_key in (('groups', 'group'),
+                                                            ('users', 'user')):
             for value in self._get_pages(api.format(api_endpoint)):
-                permissions[value['permission']][permission_type].append(value[response_key]['name'])
-        return permissions
+                if api_endpoint == 'users':
+                    yield PermissionEntry(value['permission'], value[response_key]['name'], None)
+                elif api_endpoint == 'groups':
+                    yield PermissionEntry(value['permission'], None, value[response_key]['name'])
 
     def _get_pages(self, url):
         query_args = []
