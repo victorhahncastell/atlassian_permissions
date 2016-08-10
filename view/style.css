@@ -22,3 +22,8 @@ del {
     color: red;
     font-weight: bold;
 }
+
+ins {
+    color: green;
+    font-weight: bold;
+}

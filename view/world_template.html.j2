@@ -13,9 +13,18 @@
         <title>Atlassian permissions</title>
     </head>
     <body style="text-align: center">
-        <h1 class="w3-xxxlarge w3-animate-bottom">Atlassian permissions</h1>
+        <h1 class="w3-xxxlarge">Atlassian permissions</h1>
 
-        %% for service_key, project_dict in data.items()
+        %% if metadata['header_messages']
+        <h2 class="w3-xlarge">Notice</h2>
+        <ul>
+        %% for message in metadata['header_messages'].values()
+            <li>{{ message }}</li>
+        %% endfor
+        </ul>
+        %% endif
+
+        %% for service_key, project_dict in permdata.items()
         <div class="w3-responsive w3-card-4 service-container">
         <h2 class="w3-xlarge">{{ service_key }}</h2>
             <table class="w3-table w3-striped w3-white service-table">

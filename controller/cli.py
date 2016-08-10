@@ -81,8 +81,8 @@ class CliController:
 
         # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
         # TODO: fix this
-        if self.args.compare and (self.args.csv or self.args.html):
-            self.parser.error("Error: This tool currently can't export comparisons as CSV or HTML. Use --print instead.")
+        #if self.args.compare and (self.args.csv or self.args.html):
+        #    self.parser.error("Error: This tool currently can't export comparisons as CSV or HTML. Use --print instead.")
 
         # Set log level
         loglevel = getattr(logging, self.args.loglevel.upper(), None)
@@ -127,9 +127,24 @@ class CliController:
                 else:
                     pprint(permissions)
                 # TODO: use model-level diff, remove view implementation from this controller
-        else:
-            pass
-            # TODO implement, then remove validation in parse_arguments()
+        else:  # TODO remove redundant code
+            with open(self.args.compare, 'rb') as pickle_file:
+                current_permissions = self.world.permissions
+                previous_world = pickle.load(pickle_file)
+                previous_permissions = previous_world.permissions
+                permissions = DeepDiff(previous_permissions, current_permissions, ignore_order=True)
+
+                view_map = (
+                    (self.args.csv, WorldCsvView),
+                    (self.args.print, WorldTextView),
+                    (self.args.html, WorldHtmlView))
+                for arg, view_class in view_map:
+                    if arg:
+                        view = view_class(self.world, cmp=previous_world, diff="yes")
+                        if self.args.output:
+                            view.export(self.args.output)
+                        else:
+                            view.print()
 
     def run_listperms(self):
         """
