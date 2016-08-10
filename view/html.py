@@ -3,7 +3,6 @@
 
 import os
 import jinja2
-import re
 from deepdiff import DeepDiff
 
 from . import TextView
@@ -38,6 +37,14 @@ class WorldHtmlView(TextView):
         self.template = self.environment.get_template(self.template_filename)
 
     def generate(self):
+        """
+        Note:
+        generate() will pass to dicts to Jinja2 template:
+          - pemdata
+          - metadata <dict>
+            - header_messages: <dict> of (error/warning/notice) messages to be displayed on top
+        TODO: Should move all this stuff to base class and use this structure for all views
+        """
         permdata = self.model.permissions
         metadata = dict()
 
@@ -51,43 +58,10 @@ class WorldHtmlView(TextView):
 
         self._output = self.template.render(permdata=permdata, metadata=metadata)
 
-    @classmethod
-    def add_rem_parse(cls, root, metadata, operator, rawitem):
-        # TODO: this whole string and eval is so ugly - make deepdiff give us references directly
-        # note: root is used in eval()
-        try:
-            if ".users" in rawitem:
-                base = re.sub('(.*\.users).*', '\\1', rawitem)
-                item = re.sub('.*\.users(.*)', '\\1', rawitem).replace('[', '').replace(']', '').replace("'", '')
-            elif ".groups" in rawitem:
-                base = re.sub('(.*\.groups).*', '\\1', rawitem)
-                item = re.sub('.*\.groups(.*)', '\\1', rawitem).replace('[', '').replace(']', '').replace("'", '')
-            parentset = eval(base)
-            if operator == 'set_item_added':
-                parentset.remove(item)
-                parentset.add("<ins>" + item + "</ins>")
-            elif operator == 'set_item_removed':
-                parentset.add("<del>" + item + "</del>")
-        except:  # TODO specify which exception...
-            cls.msg_compare_partially_unparsable(metadata)
+    @staticmethod
+    def format_item_added(item):
+        return "<ins>" + item + "</ins>"
 
-    @classmethod
-    def msg_compare_partially_unparsable(cls, metadata):
-        """
-        Call msg_header and write a header message telling the user
-        that the provided comparison data is at least partly unparsable.
-        """
-        cls.msg_header(metadata, 'cmp_partially_unparsable',
-                       "Compare data (partially) unparsable. " +
-                       "Please ensure the old data was recorded using the same version " +
-                       "of this software. Note this software can not currently display " +
-                       "added, renamed or removed projects.")
-
-    @classmethod
-    def msg_header(cls, metadata, name, text):
-        """
-        Prepare a metadata message that the specific view should print header notice.
-        """
-        if 'header_messages' not in metadata:
-            metadata['header_messages'] = dict()
-        metadata['header_messages'][name] = text
+    @staticmethod
+    def format_item_removed(item):
+        return "<del>" + item + "</del>"
