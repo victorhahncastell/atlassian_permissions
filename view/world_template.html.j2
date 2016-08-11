@@ -27,6 +27,7 @@
         %% for service_key, project_dict in permdata.items()
         <div class="w3-responsive w3-card-4 service-container">
         <h2 class="w3-xlarge">{{ service_key }}</h2>
+            %% if project_dict|length > 0
             <table class="w3-table w3-striped w3-white service-table">
                 <thead>
                     <tr class="w3-theme">
@@ -71,6 +72,10 @@
                     %% endfor
                 </tbody>
             </table>
+            %% else
+            ## no data for this whole service
+            <p class="w3-padding-medium">{{ metadata['msg_no_data'] }}</p>
+            %% endif
             </div>
         %% endfor
     </body>

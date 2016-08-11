@@ -51,23 +51,23 @@ class WorldHtmlView(TextView):
         if self.diff == "yes" or self.diff == "only":
             olddata = self.cmp.permissions
             diff = DeepDiff(olddata, permdata)
-            for item in diff['set_item_removed']:
-                self.add_rem_parse(permdata, metadata, 'set_item_removed', item)
-            for item in diff['set_item_added']:
-                self.add_rem_parse(permdata, metadata, 'set_item_added', item)
+            if 'set_item_removed' in diff:
+                for item in diff['set_item_removed']:
+                    self.add_rem_parse(permdata, metadata, 'set_item_removed', item)
+            if 'set_item_added' in diff:
+                for item in diff['set_item_added']:
+                    self.add_rem_parse(permdata, metadata, 'set_item_added', item)
 
         # TODO: really ugly hack! need to do this upfront, which is only feasible if we get deepdiff to provide us with references directly
         remove = list()
         if self.diff == "only":
-            metadata['title'] = 'Atlassian permission changes'
+            metadata['title'] = 'Atlassian permission change report'
+            metadata['msg_no_data'] = "No changes"
             for service_key, projects in permdata.items():
-                if DeepSearch(projects, "<ins>") == {} and DeepSearch(projects, "<del>" == {}):  # discard service
-                    remove.append( (permdata, service_key) )
-                else:
-                    for project_key, permissions in projects.items():
-                        if (DeepSearch(permissions, "<ins>") == {}
-                            and DeepSearch(permissions, "<del>") == {}):  # discard project
-                                remove.append( (projects, project_key) )
+                for project_key, permissions in projects.items():
+                    if (DeepSearch(permissions, "<ins>") == {}
+                        and DeepSearch(permissions, "<del>") == {}):  # discard project
+                            remove.append( (projects, project_key) )
             for remove_from, item in remove:
                 del remove_from[item]
         else:
