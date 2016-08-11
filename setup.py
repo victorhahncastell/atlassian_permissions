@@ -4,10 +4,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='Atlassian Permissions',
-    version='1.1',
+    version='1.2',
     description='Extract Atlassian permissions',
     author='Sýlvan Heuser, Victor Hahn Castell',
-    author_email='sylvan.heuser@flexoptix.net',
+    author_email='victor.hahn@flexoptix.net',
     packages=find_packages(),
     scripts=['run.py'],
     install_requires=[

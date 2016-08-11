@@ -82,8 +82,8 @@ class CliController:
 
         # Can't output diff as CSV as we're currently using DeepDiff's output format and our CSV exporter doesn't support it.
         # TODO: fix this
-        #if self.args.compare and (self.args.csv or self.args.html):
-        #    self.parser.error("Error: This tool currently can't export comparisons as CSV or HTML. Use --print instead.")
+        if self.args.compare and (self.args.csv):
+            self.parser.error("Error: This tool currently can't export comparisons as CSV. --html or --print should work.")
 
         # Set log level
         loglevel = getattr(logging, self.args.loglevel.upper(), None)
