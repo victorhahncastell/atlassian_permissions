@@ -2,6 +2,9 @@
 
 from setuptools import setup, find_packages
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setup(
     name='Atlassian Permissions',
     version='1.2',
@@ -10,10 +13,5 @@ setup(
     author_email='victor.hahn@flexoptix.net',
     packages=find_packages(),
     scripts=['run.py'],
-    install_requires=[
-        'requests>=2.5.1',
-        'deepdiff>=2.1.2',
-        'dill',
-        'Jinja2'
-    ]
+    install_requires=required
 )

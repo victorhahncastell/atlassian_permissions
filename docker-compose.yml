@@ -1,0 +1,6 @@
+version: '2'
+services:
+    atlassian_permissions:
+        image: bauhuette:5000/foinfrastructure/atlassian_permissions
+        build: .
+

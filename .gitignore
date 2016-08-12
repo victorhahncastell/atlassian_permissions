@@ -59,7 +59,7 @@ target/
 
 # Platform specific bullshit
 .DS_Store
-
+*.swp
 
 # Project specific
 *.pickle
