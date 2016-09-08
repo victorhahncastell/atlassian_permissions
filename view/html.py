@@ -50,13 +50,13 @@ class WorldHtmlView(TextView):
 
         if self.diff == "yes" or self.diff == "only":
             olddata = self.cmp.permissions
-            diff = DeepDiff(olddata, permdata)
+            diff = DeepDiff(olddata, permdata, default_view='ref')
             if 'set_item_removed' in diff:
-                for item in diff['set_item_removed']:
-                    self.add_rem_parse(permdata, metadata, 'set_item_removed', item)
+                for change in diff['set_item_removed']:
+                    self.add_rem_parse(change)
             if 'set_item_added' in diff:
-                for item in diff['set_item_added']:
-                    self.add_rem_parse(permdata, metadata, 'set_item_added', item)
+                for change in diff['set_item_added']:
+                    self.add_rem_parse(change)
 
         # TODO: really ugly hack! need to do this upfront, which is only feasible if we get deepdiff to provide us with references directly
         remove = list()
