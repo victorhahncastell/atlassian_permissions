@@ -3,7 +3,6 @@
 
 import os
 import jinja2
-from deepdiff import DeepDiff, DeepSearch
 
 from . import TextView
 
@@ -37,42 +36,7 @@ class WorldHtmlView(TextView):
         self.template = self.environment.get_template(self.template_filename)
 
     def generate(self):
-        """
-        Note:
-        generate() will pass to dicts to Jinja2 template:
-          - pemdata
-          - metadata <dict>
-            - header_messages: <dict> of (error/warning/notice) messages to be displayed on top
-        TODO: Should move all this stuff to base class and use this structure for all views
-        """
-        permdata = self.model.permissions
-        metadata = dict()
-
-        if self.diff == "yes" or self.diff == "only":
-            olddata = self.cmp.permissions
-            diff = DeepDiff(olddata, permdata, default_view='ref')
-            if 'set_item_removed' in diff:
-                for change in diff['set_item_removed']:
-                    self.add_rem_parse(change)
-            if 'set_item_added' in diff:
-                for change in diff['set_item_added']:
-                    self.add_rem_parse(change)
-
-        # TODO: really ugly hack! need to do this upfront, which is only feasible if we get deepdiff to provide us with references directly
-        remove = list()
-        if self.diff == "only":
-            metadata['title'] = 'Atlassian permission change report'
-            metadata['msg_no_data'] = "No changes"
-            for service_key, projects in permdata.items():
-                for project_key, permissions in projects.items():
-                    if (DeepSearch(permissions, "<ins>") == {}
-                        and DeepSearch(permissions, "<del>") == {}):  # discard project
-                            remove.append( (projects, project_key) )
-            for remove_from, item in remove:
-                del remove_from[item]
-        else:
-            metadata['title'] = 'Atlassian permissions'
-
+        permdata, metadata = self._prepare_data_for_generate()
         self._output = self.template.render(permdata=permdata, metadata=metadata)
 
     @staticmethod

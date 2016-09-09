@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from abc import ABCMeta, abstractmethod, abstractproperty
-import re
+from abc import ABCMeta, abstractmethod
+from deepdiff import DeepDiff
 
 
 class TextView(metaclass=ABCMeta):
@@ -68,6 +68,50 @@ class TextView(metaclass=ABCMeta):
 
     def print(self):
         print(self.output)
+
+    def _prepare_data_for_generate(self):
+        """
+        Prepare two dicts that our child class will use to generate the view:
+          - pemdata
+          - metadata
+            - header_messages: error/warning/notice messages to be displayed "on top"
+        """
+        # TODO: should use this structure for all views / in all child classes
+        permdata = self.model.permissions
+        metadata = dict()
+
+        contains_change = set()  # for diff only, we collect all containers actually containing changes
+        if self.diff == "yes" or self.diff == "only":
+            olddata = self.cmp.permissions
+            diff = DeepDiff(olddata, permdata, default_view='ref')
+            if 'set_item_removed' in diff:
+                for change in diff['set_item_removed']:
+                    contains_change.add(change.up.up.t2)  # up from string to user/group set, up to PermissionEntry
+                    self.add_rem_parse(change)  # subclass implements to mark this item as removed
+            if 'set_item_added' in diff:
+                for change in diff['set_item_added']:
+                    contains_change.add(change.up.up.t2)  # up from string to user/group set, up to PermissionEntry
+                    self.add_rem_parse(change)  # subclass implements to mark this item as added
+
+        remove = list()
+        if self.diff == "only":
+            metadata['title'] = 'Atlassian permission change report'
+            metadata['msg_no_data'] = "No changes"
+            for service_key, projects in permdata.items():
+                for project_key, permissions in projects.items():
+                    any_change = False
+                    for permission in permissions.values():
+                        if permission in contains_change:
+                            any_change = True
+                    if not any_change:
+                        # remove this project if none of its permissions (e.g. User, Developer...) has changes
+                        remove.append( (projects, project_key) )
+            for remove_from, item in remove:
+                del remove_from[item]
+        else:
+            metadata['title'] = 'Atlassian permissions'
+
+        return permdata, metadata
 
     @classmethod
     def add_rem_parse(cls, change):
