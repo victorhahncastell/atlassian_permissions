@@ -1,0 +1,4 @@
+requests>=2.5.1
+deepdiff>=2.1.2
+dill
+Jinja2
