@@ -1,4 +1,4 @@
 requests>=2.5.1
-deepdiff>=2.1.2
+-e git+https://github.com/victorhahncastell/deepdiff.git#egg=deepdiff
 dill
 Jinja2
