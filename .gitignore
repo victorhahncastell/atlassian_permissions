@@ -19,6 +19,7 @@ lib64/
 parts/
 sdist/
 var/
+/src/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -63,7 +64,6 @@ target/
 
 # Project specific
 *.pickle
-/*.txt
 /*.csv
 /*.html
 
