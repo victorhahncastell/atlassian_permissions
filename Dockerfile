@@ -2,8 +2,7 @@ FROM python:3
 
 MAINTAINER Victor Hahn <victor.hahn@flexoptix.net>
 
-RUN pip install -r requirements.txt
+ADD . /opt/atlassian_permissions
+RUN pip install -r /opt/atlassian_permissions/requirements.txt
 
-ENTRYPOINT ["./run.py"]
-
-
+ENTRYPOINT ["/opt/atlassian_permissions/run.py"]
