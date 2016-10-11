@@ -2,6 +2,8 @@ import logging
 from urllib.parse import urlsplit, urljoin
 from requests import get
 
+l = logging.getLogger(__name__)
+
 #TODO: move this somewhere sensible
 #TODO: useful error handling (CLI...)
 class HTTPClient:
@@ -11,12 +13,16 @@ class HTTPClient:
         self.password = password
 
     def get(self, url):
-        url = urlsplit(url)
-        url = url[2:]
-        request_url = urljoin(self.base, url[0])
+        request_url =  self.base + url
+
+        l.debug("Will now get: " + str(request_url))
+
         if self.user is not None:
             response = get(request_url, auth=(self.user, self.password))
         else:
             response = get(request_url)
-        assert response.status_code is 200, 'Error when requesting {}.'.format(request_url)
+
+        assert response.status_code is 200, 'Error when requesting {}, response code {}.'.format(request_url, response.status_code)
+        # TODO: Need better error handling
+
         return response.json()

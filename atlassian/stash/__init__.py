@@ -30,9 +30,11 @@ class Stash(Service):
         pass  # TODO logout of stash
 
     def load_projects(self):
+        l.debug("Starting to fetch Stash projects.")
         yield Project(self, {'key': self.GLOBALKEY, 'description': 'Global Stash permissions'})
         for proj in self._get_pages('/rest/api/1.0/projects'):
             projectkey = proj['key']
+            l.debug("Fetched Stash project " + projectkey)
             yield Project(self, proj)
             for repo in self._get_pages('/rest/api/1.0/projects/{projectKey}/repos'.format(projectKey=projectkey)):
                 repo['key'] = '{}{}{}'.format(projectkey, self.REPO_DELIM, repo['slug'])
@@ -41,6 +43,7 @@ class Stash(Service):
                 yield Project(self, repo) # TODO repo!=project
 
     def load_permissions_for_project(self, project_key):
+        l.debug("Fetching stash permissions for " + project_key)
         # global permissions
         if project_key is self.GLOBALKEY:
             result = self._get_permissions('/rest/api/1.0/admin/permissions/{}')
@@ -76,7 +79,10 @@ class Stash(Service):
         values = []
         start = 0
         while not response['isLastPage']:
-            response = self.client.get(url.format(start))
+            request = url.format(start)
+            l.debug("Will now request: " + request)
+            response = self.client.get(request)
+            l.debug("Got a server response: " + str(response))
             start = response['size'] - 1
             values += response['values']
         return values
