@@ -20,5 +20,5 @@ class HTTPClient:
             response = get(request_url, auth=(self.user, self.password))
         else:
             response = get(request_url)
-        assert response.status_code is 200, 'Error when requesting {}.'.format(request_url)
+        assert response.status_code is 200, 'Error {} when requesting {}.'.format(response.status_code, request_url)
         return response.json()
